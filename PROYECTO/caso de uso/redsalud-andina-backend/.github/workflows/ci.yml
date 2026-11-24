@@ -1,0 +1,47 @@
+name: CI RedSalud Andina
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+
+jobs:
+  build-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Ejecutar pruebas unitarias, ArchUnit, Testcontainers y JaCoCo
+        run: mvn -B verify
+
+      - name: Verificar cobertura de dominio >= 70%
+        run: |
+          python3 - << 'EOF'
+          import xml.etree.ElementTree as ET, sys
+          tree = ET.parse("target/site/jacoco/jacoco.xml")
+          covered = missed = 0
+          for pkg in tree.findall(".//package"):
+              if pkg.attrib["name"].endswith("/dominio"):
+                  for c in pkg.findall("counter"):
+                      if c.attrib["type"] == "INSTRUCTION":
+                          covered += int(c.attrib["covered"])
+                          missed += int(c.attrib["missed"])
+          pct = (covered * 100.0 / (covered + missed)) if (covered + missed) else 0.0
+          print(f"Cobertura dominio: {pct:.2f}% ({covered}/{covered + missed})")
+          sys.exit(0 if pct >= 70.0 else 1)
+          EOF
+
+      - name: Publicar reporte JaCoCo
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
