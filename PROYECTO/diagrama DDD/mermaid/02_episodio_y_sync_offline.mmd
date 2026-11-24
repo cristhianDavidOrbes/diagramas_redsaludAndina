@@ -1,0 +1,30 @@
+flowchart LR
+  subgraph Agregado_LoteSync["Agregado LoteSync<br/><i>Agregado</i>"]
+    s2_root_lote(("LoteSincronización<br/><i>Raíz de Agregado</i>"))
+    s2_vo_key(("ClaveIdempotencia<br/><i>Objeto de Valor</i>"))
+    s2_srv_res(("ResolutorConflictos<br/><i>Servicio de Dominio</i>"))
+  end
+  subgraph Agregado_Episodio["Agregado Episodio<br/><i>Agregado</i>"]
+    s2_root_ep(("EpisodioClínico<br/><i>Raíz de Agregado</i>"))
+    s2_ent_adj(("AdjuntoCifradoS3<br/><i>Entidad</i>"))
+    s2_rep_ep(("RepoEpisodios<br/><i>Repositorio</i>"))
+  end
+  s2_ext_app("App Móvil Offline<br/><i>Sistema Externo</i>")
+  s2_cmd_sync(("EnviarLoteSync<br/><i>Comando</i>"))
+  s2_ev_lote(("LoteValidado<br/><i>Evento</i>"))
+  s2_pol_conf(("PolíticaConflicto<br/><i>Política</i>"))
+  s2_cmd_ep(("GuardarEpisodio<br/><i>Comando</i>"))
+  s2_ev_sync(("EpisodioSincronizado<br/><i>Evento</i>"))
+  s2_vis_slo(("Vista Conflicto Auditado<br/><i>Vista</i>"))
+  s2_ext_app -->|"reintenta x3"| s2_cmd_sync
+  s2_cmd_sync -->|"produce"| s2_ev_lote
+  s2_cmd_sync -->|"invoca agregado"| s2_root_lote
+  s2_root_lote -->|"valida clave única"| s2_vo_key
+  s2_root_lote -->|"resuelve LWW"| s2_srv_res
+  s2_ev_lote -->|"activa"| s2_pol_conf
+  s2_pol_conf -->|"emite"| s2_cmd_ep
+  s2_cmd_ep -->|"produce"| s2_ev_sync
+  s2_cmd_ep -->|"invoca agregado"| s2_root_ep
+  s2_root_ep -->|"cifra S3 KMS"| s2_ent_adj
+  s2_root_ep -->|"persiste"| s2_rep_ep
+  s2_ev_sync -->|"proyecta SLA ≤15m"| s2_vis_slo

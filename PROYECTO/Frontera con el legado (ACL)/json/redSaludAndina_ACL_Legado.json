@@ -1,0 +1,498 @@
+{
+  "formato": "processflow-board/v1",
+  "proyecto": {
+    "nombre_proyecto": "redSaludAndina_ACL_Legado",
+    "notation": "c4",
+    "notas": "# Sesión 2 — Frontera con el legado: Adaptador Anticorrupción (ACL)\nEl sistema legado no se modifica y solo expone SOAP nocturno y BD de solo lectura.\nDecisión (ADR-002): CQRS con vista de lectura propia (Caffeine L1 + ElastiCache/DynamoDB L2) con TTL explícito y cabecera X-Data-Freshness.\nMétricas: p95 <= 2 s con caché; <= 6 s consulta directa al legado; fallback controlado sin devolver 500 cuando el mock SOAP cae.\nMantenibilidad: cambio de proveedor aislado en <= 1 módulo (legado.infraestructura.salida.soap), sin tocar dominio.",
+    "agregados": [
+      {
+        "nombre_agregado": "Monolito Modular · Módulo Integración Legado",
+        "tipo_contenedor": "Límite de Contenedor",
+        "entidad_raiz": "Aísla completamente el modelo XML/SOAP del legado detrás del puerto de dominio HistorialClinicoPort y un read model con caducidad visible.",
+        "descripcion": "Aísla completamente el modelo XML/SOAP del legado detrás del puerto de dominio HistorialClinicoPort y un read model con caducidad visible.",
+        "fuente": "Taller Sesión 2 · Bloques 2.1–2.5",
+        "metadata": [
+          {
+            "clave": "repo",
+            "valor": "https://github.com/cristhianDavidOrbes/diagramas_redsaludAndina"
+          }
+        ],
+        "x": 340,
+        "y": 80,
+        "width": 1120,
+        "height": 640,
+        "nodos": [
+          {
+            "id": "acl_ctrl",
+            "nombre": "HistorialLegadoController",
+            "tipo_elemento": "Componente",
+            "descripcion": "Expone GET /historial/{id} con cabecera X-Data-Freshness; exige motivo clínico y delega en caso de uso sin lógica de legado.",
+            "fuente": "Bloque 2.3",
+            "metadata": [
+              {
+                "clave": "repo",
+                "valor": "https://github.com/cristhianDavidOrbes/diagramas_redsaludAndina"
+              },
+              {
+                "clave": "puerto",
+                "valor": "8080"
+              }
+            ],
+            "x": 380,
+            "y": 198
+          },
+          {
+            "id": "acl_svc",
+            "nombre": "ConsultarHistorialService",
+            "tipo_elemento": "Componente",
+            "descripcion": "Caso de uso Java puro: lee primero del read model vigente y solo invoca HistorialClinicoPort ante cache miss o TTL expirado.",
+            "fuente": "Bloque 2.2",
+            "metadata": [
+              {
+                "clave": "repo",
+                "valor": "https://github.com/cristhianDavidOrbes/diagramas_redsaludAndina"
+              },
+              {
+                "clave": "puerto",
+                "valor": "8080"
+              }
+            ],
+            "x": 680,
+            "y": 198
+          },
+          {
+            "id": "acl_cache_repo",
+            "nombre": "ReadModelHistorialRepo",
+            "tipo_elemento": "Componente",
+            "descripcion": "Materializa proyección canónica del historial con marca de frescura y TTL explícito en caché de dos niveles.",
+            "fuente": "Bloque 2.3",
+            "metadata": [
+              {
+                "clave": "repo",
+                "valor": "https://github.com/cristhianDavidOrbes/diagramas_redsaludAndina"
+              },
+              {
+                "clave": "puerto",
+                "valor": "8080"
+              }
+            ],
+            "x": 1100,
+            "y": 158
+          },
+          {
+            "id": "acl_port",
+            "nombre": "HistorialClinicoPort",
+            "tipo_elemento": "Componente",
+            "descripcion": "Puerto de dominio que define el contrato canónico HistorialClinicoCanonico; jamás expone tipos SOAP/XML.",
+            "fuente": "Bloque 2.2 y 2.5",
+            "metadata": [
+              {
+                "clave": "repo",
+                "valor": "https://github.com/cristhianDavidOrbes/diagramas_redsaludAndina"
+              },
+              {
+                "clave": "puerto",
+                "valor": "8080"
+              }
+            ],
+            "x": 680,
+            "y": 478
+          },
+          {
+            "id": "acl_soap",
+            "nombre": "AdaptadorSoapACL",
+            "tipo_elemento": "Componente",
+            "descripcion": "WebServiceTemplate + timeouts + CircuitBreaker Resilience4j + traductor canónico <-> SOAP; degrada sin HTTP 500.",
+            "fuente": "Bloque 2.2 y 2.5",
+            "metadata": [
+              {
+                "clave": "repo",
+                "valor": "https://github.com/cristhianDavidOrbes/diagramas_redsaludAndina"
+              },
+              {
+                "clave": "puerto",
+                "valor": "8080"
+              }
+            ],
+            "x": 1100,
+            "y": 478
+          }
+        ],
+        "aristas": []
+      }
+    ],
+    "big_picture": {
+      "descripcion": "Arquitectura de la Capa Anticorrupción (ACL) y Read Model CQRS frente al legado SOAP nocturno.",
+      "hotspots": [],
+      "nodos": [
+        {
+          "id": "acl_esp",
+          "nombre": "Especialista",
+          "tipo_elemento": "Persona",
+          "descripcion": "Consulta antecedentes clínicos en teleconsulta; recibe X-Data-Freshness en p95 <= 2 s con caché o <= 6 s directo.",
+          "fuente": "RF-06 · Matriz de Calidad",
+          "metadata": [
+            {
+              "clave": "repo",
+              "valor": "https://github.com/cristhianDavidOrbes/diagramas_redsaludAndina"
+            },
+            {
+              "clave": "puerto",
+              "valor": "8080"
+            }
+          ],
+          "x": 30,
+          "y": 198
+        },
+        {
+          "id": "acl_aud",
+          "nombre": "Auditoría Lecturas Clínicas",
+          "tipo_elemento": "Base de Datos",
+          "descripcion": "Registra usuario, fecha, recurso y motivo por cada lectura clínica antes de entregar datos (S3 Object Lock).",
+          "fuente": "RF-08 · Bloque 4.3",
+          "metadata": [
+            {
+              "clave": "repo",
+              "valor": "https://github.com/cristhianDavidOrbes/diagramas_redsaludAndina"
+            },
+            {
+              "clave": "puerto",
+              "valor": "5432"
+            }
+          ],
+          "x": 380,
+          "y": 808
+        },
+        {
+          "id": "acl_cache_db",
+          "nombre": "Caffeine L1 + ElastiCache L2",
+          "tipo_elemento": "Base de Datos",
+          "descripcion": "Read model propio con TTL explícito; sirve copia con caducidad visible si el legado SOAP no responde.",
+          "fuente": "Bloque 2.3 · ADR-002",
+          "metadata": [
+            {
+              "clave": "repo",
+              "valor": "https://github.com/cristhianDavidOrbes/diagramas_redsaludAndina"
+            },
+            {
+              "clave": "puerto",
+              "valor": "5432"
+            }
+          ],
+          "x": 1570,
+          "y": 158
+        },
+        {
+          "id": "acl_legacy",
+          "nombre": "Legado SOAP + BD Solo Lectura",
+          "tipo_elemento": "Sistema Externo",
+          "descripcion": "Fuente de verdad inmodificable del historial clínico; expone SOAP en ventana nocturna y BD solo lectura.",
+          "fuente": "Análisis §3 · RF-06",
+          "metadata": [
+            {
+              "clave": "repo",
+              "valor": "https://github.com/cristhianDavidOrbes/diagramas_redsaludAndina"
+            },
+            {
+              "clave": "puerto",
+              "valor": "8080"
+            }
+          ],
+          "x": 1570,
+          "y": 478
+        }
+      ],
+      "aristas": [
+        {
+          "fuente": "acl_esp",
+          "destino": "acl_ctrl",
+          "descripcion": "GET /historial/{id} [HTTPS]"
+        },
+        {
+          "fuente": "acl_ctrl",
+          "destino": "acl_svc",
+          "descripcion": "Consulta canónica"
+        },
+        {
+          "fuente": "acl_ctrl",
+          "destino": "acl_aud",
+          "descripcion": "Evento lectura + motivo"
+        },
+        {
+          "fuente": "acl_svc",
+          "destino": "acl_cache_repo",
+          "descripcion": "1. Lee read model (<= 2 s)"
+        },
+        {
+          "fuente": "acl_svc",
+          "destino": "acl_port",
+          "descripcion": "2. Fallback miss (<= 6 s)"
+        },
+        {
+          "fuente": "acl_port",
+          "destino": "acl_soap",
+          "descripcion": "Implementa puerto ACL"
+        },
+        {
+          "fuente": "acl_cache_repo",
+          "destino": "acl_cache_db",
+          "descripcion": "L1/L2 + TTL + X-Data-Freshness"
+        },
+        {
+          "fuente": "acl_soap",
+          "destino": "acl_legacy",
+          "descripcion": "SOAP / BD RO [Resilience4j]"
+        }
+      ]
+    }
+  },
+  "vistas": {
+    "customViews": [
+      {
+        "id": "fa2be633-6589-5aa6-bf60-d0165e6268ab",
+        "name": "DDD · Contrato Canónico y ACL Legado",
+        "kind": "graph",
+        "notation": "ddd",
+        "graph": {
+          "nombre_proyecto": "DDD · Contrato Canónico y ACL Legado",
+          "notation": "ddd",
+          "notas": "Vista táctica DDD y Event Storming del módulo Integración Legado (Sesión 2 · ADR-002).",
+          "agregados": [
+            {
+              "nombre_agregado": "Agregado HistorialVista",
+              "tipo_contenedor": "Agregado",
+              "entidad_raiz": "Copia de lectura canónica con frescura visible; protege al dominio del esquema XML del legado.",
+              "descripcion": "Copia de lectura canónica con frescura visible; protege al dominio del esquema XML del legado.",
+              "fuente": "Sesión 2 · ADR-002",
+              "metadata": [
+                {
+                  "clave": "codigo",
+                  "valor": "modules/legado"
+                }
+              ],
+              "x": 240,
+              "y": 320,
+              "width": 620,
+              "height": 340,
+              "nodos": [
+                {
+                  "id": "ad_root",
+                  "nombre": "HistorialCanónico",
+                  "tipo_elemento": "Raíz de Agregado",
+                  "descripcion": "Modelo canónico del paciente, episodios y documentos con marca de frescura.",
+                  "fuente": "Bloque 2.5",
+                  "x": 440,
+                  "y": 368
+                },
+                {
+                  "id": "ad_vo",
+                  "nombre": "MarcaFrescura",
+                  "tipo_elemento": "Objeto de Valor",
+                  "descripcion": "Encapsula timestamp de sincronización, TTL y cabecera X-Data-Freshness.",
+                  "fuente": "Bloque 2.3",
+                  "x": 280,
+                  "y": 508
+                },
+                {
+                  "id": "ad_repo",
+                  "nombre": "CacheTwoLevelRepo",
+                  "tipo_elemento": "Repositorio",
+                  "descripcion": "Caché Caffeine L1 + ElastiCache/DynamoDB L2 con degradación sin 500.",
+                  "fuente": "Bloque 2.3",
+                  "x": 600,
+                  "y": 508
+                }
+              ],
+              "aristas": []
+            },
+            {
+              "nombre_agregado": "Frontera Anticorrupción",
+              "tipo_contenedor": "Contexto Delimitado",
+              "entidad_raiz": "Aísla SOAP nocturno y traducción de contrato en <= 1 módulo.",
+              "descripcion": "Aísla SOAP nocturno y traducción de contrato en <= 1 módulo.",
+              "fuente": "Bloque 2.2 y 2.5",
+              "metadata": [
+                {
+                  "clave": "codigo",
+                  "valor": "legado/infraestructura/salida/soap"
+                }
+              ],
+              "x": 980,
+              "y": 320,
+              "width": 600,
+              "height": 340,
+              "nodos": [
+                {
+                  "id": "ad_acl",
+                  "nombre": "ACL SOAP Nocturno",
+                  "tipo_elemento": "Capa Anticorrupción (ACL)",
+                  "descripcion": "Implementa HistorialClinicoPort con WebServiceTemplate, Resilience4j y traducción canónica sin filtrar DTOs SOAP.",
+                  "fuente": "Bloque 2.2",
+                  "x": 1170,
+                  "y": 368
+                },
+                {
+                  "id": "ad_reg",
+                  "nombre": "Regla Legado Verdad",
+                  "tipo_elemento": "Regla de Negocio",
+                  "descripcion": "El legado nunca se modifica; la vista es copia con caducidad visible.",
+                  "fuente": "Bloque 2.4",
+                  "x": 1170,
+                  "y": 513
+                }
+              ],
+              "aristas": []
+            }
+          ],
+          "big_picture": {
+            "descripcion": "Event Storming de lectura de historial clínico con degradación controlada.",
+            "hotspots": [],
+            "nodos": [
+              {
+                "id": "ad_act",
+                "nombre": "Especialista",
+                "tipo_elemento": "Actor",
+                "descripcion": "Solicita historial del paciente durante teleconsulta y valida fecha de frescura.",
+                "fuente": "RF-06",
+                "x": 30,
+                "y": 88
+              },
+              {
+                "id": "ad_cmd1",
+                "nombre": "ConsultarHistorial",
+                "tipo_elemento": "Comando",
+                "descripcion": "Ejecuta GET /historial/{id} exigiendo motivo clínico y verificando read model.",
+                "fuente": "Bloque 2.3",
+                "x": 320,
+                "y": 88
+              },
+              {
+                "id": "ad_ev1",
+                "nombre": "HistorialCacheExpirado",
+                "tipo_elemento": "Evento",
+                "descripcion": "Se emite cuando la copia local de caché no existe o superó su TTL explícito.",
+                "fuente": "Bloque 2.3",
+                "x": 620,
+                "y": 88
+              },
+              {
+                "id": "ad_pol",
+                "nombre": "PolíticaFallbackACL",
+                "tipo_elemento": "Política",
+                "descripcion": "Cuando el caché expira dispara consulta SOAP resiliente y ante caída sirve copia degradada.",
+                "fuente": "Bloque 2.2",
+                "x": 920,
+                "y": 88
+              },
+              {
+                "id": "ad_cmd2",
+                "nombre": "ConsultarLegadoSOAP",
+                "tipo_elemento": "Comando",
+                "descripcion": "Invoca HistorialClinicoPort con timeouts y CircuitBreaker traduciendo a modelo canónico.",
+                "fuente": "Bloque 2.2",
+                "x": 1220,
+                "y": 88
+              },
+              {
+                "id": "ad_ev2",
+                "nombre": "HistorialEntregado",
+                "tipo_elemento": "Evento",
+                "descripcion": "Respuesta entregada (<= 2 s caché / <= 6 s directo) con X-Data-Freshness y auditoría.",
+                "fuente": "Bloque 2.4",
+                "x": 1520,
+                "y": 88
+              },
+              {
+                "id": "ad_sys",
+                "nombre": "Legado SOAP + BD RO",
+                "tipo_elemento": "Sistema Externo",
+                "descripcion": "Sistema heredado inmodificable que expone SOAP nocturno y BD de solo lectura como fuente de verdad.",
+                "fuente": "Análisis §3",
+                "x": 1670,
+                "y": 368
+              }
+            ],
+            "aristas": [
+              {
+                "fuente": "ad_act",
+                "destino": "ad_cmd1",
+                "descripcion": "solicita"
+              },
+              {
+                "fuente": "ad_cmd1",
+                "destino": "ad_ev1",
+                "descripcion": "cache miss"
+              },
+              {
+                "fuente": "ad_cmd1",
+                "destino": "ad_root",
+                "descripcion": "lee proyección"
+              },
+              {
+                "fuente": "ad_ev1",
+                "destino": "ad_pol",
+                "descripcion": "activa"
+              },
+              {
+                "fuente": "ad_pol",
+                "destino": "ad_cmd2",
+                "descripcion": "dispara"
+              },
+              {
+                "fuente": "ad_cmd2",
+                "destino": "ad_ev2",
+                "descripcion": "degrada o refresca"
+              },
+              {
+                "fuente": "ad_cmd2",
+                "destino": "ad_acl",
+                "descripcion": "invoca puerto"
+              },
+              {
+                "fuente": "ad_root",
+                "destino": "ad_vo",
+                "descripcion": "expone TTL"
+              },
+              {
+                "fuente": "ad_root",
+                "destino": "ad_repo",
+                "descripcion": "persiste L1/L2"
+              },
+              {
+                "fuente": "ad_acl",
+                "destino": "ad_reg",
+                "descripcion": "aplica"
+              },
+              {
+                "fuente": "ad_acl",
+                "destino": "ad_sys",
+                "descripcion": "SOAP / BD RO"
+              }
+            ]
+          }
+        },
+        "createdAt": "2026-11-24T22:35:00.000Z"
+      },
+      {
+        "id": "a1c04e38-8c19-5f28-8095-3e3331b9eabe",
+        "name": "Secuencia · Caché, Fallback y SOAP Caído",
+        "kind": "mermaid",
+        "notation": "c4",
+        "mermaidCode": "sequenceDiagram\n    autonumber\n    participant E as Especialista\n    participant API as GET /historial/{id}\n    participant ABAC as Autorizador ABAC\n    participant RM as Cache L1 Caffeine + L2 ElastiCache\n    participant ACL as Adaptador SOAP (Resilience4j)\n    participant LEG as Legado SOAP Nocturno + BD RO\n    participant AUD as Auditoría S3 Object Lock\n\n    E->>API: GET /historial/{pacienteId}?motivo=teleconsulta\n    API->>ABAC: ¿Rol clínico + centro + relación?\n    ABAC-->>API: Permitido\n    API->>RM: Buscar read model canónico (TTL vigente)\n    alt Cache Hit (p95 <= 2 s)\n        RM-->>API: HistorialCanónico + fechaSincronizacion\n        API->>AUD: Registrar lectura clínica (usuario, fecha, recurso, motivo)\n        API-->>E: 200 OK + X-Data-Freshness: fresh\n    else Cache Miss / TTL expirado (<= 6 s)\n        API->>ACL: HistorialClinicoPort.consultar(pacienteId)\n        ACL->>LEG: WebServiceTemplate (timeout + CircuitBreaker)\n        alt Legado responde en ventana autorizada\n            LEG-->>ACL: Respuesta XML/SOAP legado\n            ACL->>ACL: Traducir a modelo canónico (sin filtrar DTO SOAP)\n            ACL-->>API: HistorialCanónico actualizado\n            API->>RM: Actualizar caché L1/L2 con TTL explícito\n            API->>AUD: Registrar lectura clínica\n            API-->>E: 200 OK + X-Data-Freshness: live\n        else Ejercicio detonante: Mock SOAP apagado / timeout\n            LEG--xACL: Error / Timeout\n            ACL-->>API: CircuitBreaker OPEN -> fallback read model\n            API->>AUD: Registrar lectura degradada\n            API-->>E: 200 OK (nunca 500) + X-Data-Freshness: stale\n        end\n    end\n",
+        "createdAt": "2026-11-24T22:35:00.000Z"
+      }
+    ],
+    "activeViewId": null,
+    "injectedViewIds": [],
+    "openViewIds": []
+  },
+  "compartido": {
+    "references": [],
+    "agent": {
+      "versions": [],
+      "lineages": [],
+      "artifacts": []
+    },
+    "analysis": {}
+  }
+}

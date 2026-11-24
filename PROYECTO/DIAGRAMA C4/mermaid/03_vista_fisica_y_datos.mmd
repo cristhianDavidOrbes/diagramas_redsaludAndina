@@ -1,0 +1,18 @@
+flowchart LR
+  pwa("Cliente offline-first<br/><i>Contenedor</i>")
+  mono("Aplicación única<br/><i>Contenedor</i>")
+  db[("PostgreSQL<br/><i>Base de Datos</i>")]
+  obj("Objetos clínicos cifrados<br/><i>Sistema</i>")
+  acl["Adaptador anticorrupción<br/><i>Componente</i>"]
+  old("Legado on-premise<br/><i>Sistema Externo</i>")
+  video("Proveedor WebRTC<br/><i>Sistema Externo</i>")
+  evi("Evidencia inmutable<br/><i>Sistema</i>")
+  pwa -->|"REST + operationId [TLS]"| mono
+  mono -->|"Transacciones [SQL/TLS]"| db
+  mono -->|"Objetos privados [TLS]"| obj
+  mono -->|"Puerto HistoriaClinica"| acl
+  acl -->|"SOAP nocturno / BD RO"| old
+  acl -->|"Proyección de lectura"| db
+  mono -->|"Sesiones y asistencia"| video
+  pwa -->|"Medios [WebRTC]"| video
+  mono -->|"Outbox durable [TLS]"| evi

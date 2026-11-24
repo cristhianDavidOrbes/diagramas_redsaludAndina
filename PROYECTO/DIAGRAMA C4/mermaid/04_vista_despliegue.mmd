@@ -1,0 +1,20 @@
+flowchart LR
+  edge("Centros y especialistas<br/><i>Sistema Externo</i>")
+  lb("Entrada HTTPS - ALB<br/><i>Sistema</i>")
+  a("Monolito AZ-A<br/><i>Contenedor</i>")
+  b("Monolito AZ-B<br/><i>Contenedor</i>")
+  rds[("RDS PostgreSQL Multi-AZ<br/><i>Base de Datos</i>")]
+  s3("S3 privado + Object Lock<br/><i>Sistema</i>")
+  ops("Identidad, KMS y observabilidad<br/><i>Sistema</i>")
+  onprem("Legado y video nacionales<br/><i>Sistema Externo</i>")
+  edge -->|"HTTPS"| lb
+  lb -->|"Distribuye tráfico"| a
+  lb -->|"Distribuye tráfico"| b
+  a -->|"SQL/TLS"| rds
+  b -->|"SQL/TLS"| rds
+  a -->|"Acceso privado"| s3
+  b -->|"Acceso privado"| s3
+  a -->|"Identidad y operación"| ops
+  b -->|"Identidad y operación"| ops
+  a -->|"Integración privada"| onprem
+  b -->|"Integración privada"| onprem

@@ -1,0 +1,35 @@
+flowchart LR
+  subgraph agg_RedSalud___Especialista["RedSalud · Especialista<br/><i>Carril</i>"]
+    sub04_inicio(("Consulta clínica iniciada<br/><i>Evento de Inicio</i>"))
+    sub04_validar["Verificar rol y motivo<br/><i>Tarea</i>"]
+    sub04_permiso{"¿Acceso autorizado?<br/><i>Compuerta Exclusiva</i>"}
+    sub04_normalizar["Preparar vista mínima<br/><i>Tarea</i>"]
+    sub04_fin_ok(("Datos listos para auditar<br/><i>Evento de Fin</i>"))
+  end
+  subgraph agg_RedSalud___Integraci_n_legado["RedSalud · Integración legado<br/><i>Carril</i>"]
+    sub04_revisar["Revisar copia y TTL<br/><i>Tarea</i>"]
+    sub04_ttl_store[("Metadatos de copia · TTL<br/><i>Almacén de Datos</i>")]
+    sub04_copia_ok{"¿Copia cumple TTL?<br/><i>Compuerta Exclusiva</i>"}
+    sub04_ventana["Verificar ventana legado<br/><i>Tarea</i>"]
+    sub04_ventana_ok{"¿Ventana activa?<br/><i>Compuerta Exclusiva</i>"}
+    sub04_urgencia["Protocolo de urgencia<br/><i>Tarea</i>"]
+    sub04_fin_ventana(("Fuera de ventana<br/><i>Evento de Fin</i>"))
+    sub04_legado["Consultar solo lectura<br/><i>Tarea</i>"]
+  end
+  subgraph agg_RedSalud___Auditor_a["RedSalud · Auditoría<br/><i>Carril</i>"]
+    sub04_denegar["Auditar intento denegado<br/><i>Tarea</i>"]
+    sub04_bitacora_rechazo[("Bitácora de rechazos · BD<br/><i>Almacén de Datos</i>")]
+    sub04_fin_denegado(("Acceso denegado<br/><i>Evento de Fin</i>"))
+  end
+  sub04_inicio --> sub04_validar
+  sub04_validar --> sub04_permiso
+  sub04_normalizar --> sub04_fin_ok
+  sub04_ttl_store -->|"Leer fecha y TTL"| sub04_revisar
+  sub04_revisar --> sub04_copia_ok
+  sub04_copia_ok -->|"No, vencida"| sub04_ventana
+  sub04_ventana --> sub04_ventana_ok
+  sub04_ventana_ok -->|"No, cerrada"| sub04_urgencia
+  sub04_urgencia --> sub04_fin_ventana
+  sub04_ventana_ok -->|"Sí, activa"| sub04_legado
+  sub04_denegar -->|"Guardar rechazo"| sub04_bitacora_rechazo
+  sub04_denegar --> sub04_fin_denegado

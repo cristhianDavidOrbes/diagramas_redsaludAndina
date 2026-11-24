@@ -1,0 +1,569 @@
+{
+  "formato": "processflow-board/v1",
+  "proyecto": {
+    "nombre_proyecto": "redSaludAndina_Seguridad_Auditoria_Operacion",
+    "notation": "c4",
+    "notas": "# Sesión 4 — Seguridad, Auditoría Demostrable y Operación\nResidencia única en una sola región AWS sin réplicas ni backups externos (ADR-004 y ADR-005).\nSeguridad: OAuth2 Resource Server + Cognito + perfiles DynamoDB; autorización ABAC (@PreAuthorize + AuthorizationManager) por rol, centro, especialidad y relación con paciente en capa de servicio (no solo UI ni controlador).\nCifrado: TLS en tránsito + AWS KMS con claves por contexto y rotación; bucket S3 sin replicación cross-region.\nAuditoría demostrable: 100 % de lecturas clínicas y 100 % de denegaciones registradas en S3 Object Lock (Compliance) + reporte reproducible 'quién vio este documento y con qué motivo'.\nOperación: Micrometer + OpenTelemetry + Actuator + Prometheus (SLO 99,5 % mensual) + CI/CD con IaC y rollback <= 10 min.",
+    "agregados": [
+      {
+        "nombre_agregado": "Región AWS Única · Seguridad, Auditoría y Operación",
+        "tipo_contenedor": "Límite de Contenedor",
+        "entidad_raiz": "Garantiza residencia de datos por diseño, evaluación ABAC en el punto de acceso al dato y observabilidad integral.",
+        "descripcion": "Garantiza residencia de datos por diseño, evaluación ABAC en el punto de acceso al dato y observabilidad integral.",
+        "fuente": "Sesión 4 · Bloques 4.1–4.5",
+        "metadata": [
+          {
+            "clave": "repo",
+            "valor": "https://github.com/cristhianDavidOrbes/diagramas_redsaludAndina"
+          }
+        ],
+        "x": 340,
+        "y": 250,
+        "width": 1120,
+        "height": 500,
+        "nodos": [
+          {
+            "id": "sec_oauth",
+            "nombre": "OAuth2 Resource Server (ACL)",
+            "tipo_elemento": "Componente",
+            "descripcion": "Valida JWT emitido por Cognito y traduce claims externos a PrincipalClínico sin acoplar el dominio.",
+            "fuente": "Bloque 4.1 · RF-01",
+            "metadata": [
+              {
+                "clave": "repo",
+                "valor": "https://github.com/cristhianDavidOrbes/diagramas_redsaludAndina"
+              },
+              {
+                "clave": "puerto",
+                "valor": "8080"
+              }
+            ],
+            "x": 390,
+            "y": 328
+          },
+          {
+            "id": "sec_abac",
+            "nombre": "Autorizador ABAC (Servicio)",
+            "tipo_elemento": "Componente",
+            "descripcion": "@PreAuthorize + AuthorizationManager propio: evalúa rol, centro, especialidad y relación con el paciente.",
+            "fuente": "Bloque 4.1",
+            "metadata": [
+              {
+                "clave": "repo",
+                "valor": "https://github.com/cristhianDavidOrbes/diagramas_redsaludAndina"
+              },
+              {
+                "clave": "puerto",
+                "valor": "8080"
+              }
+            ],
+            "x": 770,
+            "y": 328
+          },
+          {
+            "id": "sec_int",
+            "nombre": "Interceptor Auditoría Clínica",
+            "tipo_elemento": "Componente",
+            "descripcion": "Emite evento append-only (usuario, fecha, recurso, motivo, resultado) incluso ante el 100 % de denegaciones.",
+            "fuente": "Bloque 4.3 · RF-08",
+            "metadata": [
+              {
+                "clave": "repo",
+                "valor": "https://github.com/cristhianDavidOrbes/diagramas_redsaludAndina"
+              },
+              {
+                "clave": "puerto",
+                "valor": "8080"
+              }
+            ],
+            "x": 1150,
+            "y": 328
+          },
+          {
+            "id": "sec_obs",
+            "nombre": "Micrometer + OpenTelemetry",
+            "tipo_elemento": "Componente",
+            "descripcion": "Métricas p95, tasa de error, trazas OTLP y health checks para sostener SLO 99,5 % mensual.",
+            "fuente": "Bloque 4.4 · RF-10",
+            "metadata": [
+              {
+                "clave": "repo",
+                "valor": "https://github.com/cristhianDavidOrbes/diagramas_redsaludAndina"
+              },
+              {
+                "clave": "puerto",
+                "valor": "8080"
+              }
+            ],
+            "x": 580,
+            "y": 578
+          },
+          {
+            "id": "sec_rep",
+            "nombre": "Reporte Auditoría Reproducible",
+            "tipo_elemento": "Componente",
+            "descripcion": "Script/consulta versionada que demuestra 'quién vio el documento X y con qué motivo'.",
+            "fuente": "Bloque 4.3",
+            "metadata": [
+              {
+                "clave": "repo",
+                "valor": "https://github.com/cristhianDavidOrbes/diagramas_redsaludAndina"
+              },
+              {
+                "clave": "puerto",
+                "valor": "8080"
+              }
+            ],
+            "x": 1150,
+            "y": 578
+          }
+        ],
+        "aristas": []
+      }
+    ],
+    "big_picture": {
+      "descripcion": "Arquitectura de Seguridad ABAC, Cifrado KMS, Auditoría Inmutable S3 Object Lock y Operación Cloud-Native.",
+      "hotspots": [],
+      "nodos": [
+        {
+          "id": "sec_usr",
+          "nombre": "Usuario Clínico / Admin",
+          "tipo_elemento": "Persona",
+          "descripcion": "Rol clínico autorizado accede con motivo; rol administrativo recibe 403 denegado y auditado.",
+          "fuente": "Ejercicio Detonante §4",
+          "metadata": [
+            {
+              "clave": "repo",
+              "valor": "https://github.com/cristhianDavidOrbes/diagramas_redsaludAndina"
+            },
+            {
+              "clave": "puerto",
+              "valor": "8080"
+            }
+          ],
+          "x": 30,
+          "y": 328
+        },
+        {
+          "id": "sec_cog",
+          "nombre": "Cognito + DynamoDB Perfiles",
+          "tipo_elemento": "Sistema Externo",
+          "descripcion": "Proveedor OIDC y atributos de centro, especialidad y rol con consistencia fuerte.",
+          "fuente": "Análisis §2 · RF-01",
+          "metadata": [
+            {
+              "clave": "repo",
+              "valor": "https://github.com/cristhianDavidOrbes/diagramas_redsaludAndina"
+            },
+            {
+              "clave": "puerto",
+              "valor": "8080"
+            }
+          ],
+          "x": 390,
+          "y": 58
+        },
+        {
+          "id": "sec_kms",
+          "nombre": "AWS KMS + S3 Adjuntos",
+          "tipo_elemento": "Base de Datos",
+          "descripcion": "Claves KMS por contexto con rotación automática; política de bucket bloquea replicación fuera del país.",
+          "fuente": "Bloque 4.2 · ADR-005",
+          "metadata": [
+            {
+              "clave": "repo",
+              "valor": "https://github.com/cristhianDavidOrbes/diagramas_redsaludAndina"
+            },
+            {
+              "clave": "puerto",
+              "valor": "5432"
+            }
+          ],
+          "x": 770,
+          "y": 58
+        },
+        {
+          "id": "sec_worm",
+          "nombre": "S3 Object Lock (Compliance)",
+          "tipo_elemento": "Base de Datos",
+          "descripcion": "Almacén WORM inmutable append-only dentro de la región única (sin réplicas externas).",
+          "fuente": "Bloque 4.2 y 4.3 · ADR-004",
+          "metadata": [
+            {
+              "clave": "repo",
+              "valor": "https://github.com/cristhianDavidOrbes/diagramas_redsaludAndina"
+            },
+            {
+              "clave": "puerto",
+              "valor": "5432"
+            }
+          ],
+          "x": 1600,
+          "y": 448
+        },
+        {
+          "id": "sec_aud_actor",
+          "nombre": "Auditor Clínico",
+          "tipo_elemento": "Persona",
+          "descripcion": "Ejecuta y verifica el reporte reproducible versionado de accesos y denegaciones.",
+          "fuente": "RF-08 · Bloque 4.3",
+          "metadata": [
+            {
+              "clave": "repo",
+              "valor": "https://github.com/cristhianDavidOrbes/diagramas_redsaludAndina"
+            },
+            {
+              "clave": "puerto",
+              "valor": "8080"
+            }
+          ],
+          "x": 1150,
+          "y": 838
+        },
+        {
+          "id": "sec_cicd",
+          "nombre": "CI/CD + IaC (Rollback <= 10m)",
+          "tipo_elemento": "Sistema Externo",
+          "descripcion": "Pipeline con ArchUnit, Testcontainers, cobertura >= 70 % y despliegue/rollback automatizado.",
+          "fuente": "Bloque 4.5",
+          "metadata": [
+            {
+              "clave": "repo",
+              "valor": "https://github.com/cristhianDavidOrbes/diagramas_redsaludAndina"
+            },
+            {
+              "clave": "puerto",
+              "valor": "8080"
+            }
+          ],
+          "x": 580,
+          "y": 838
+        }
+      ],
+      "aristas": [
+        {
+          "fuente": "sec_usr",
+          "destino": "sec_oauth",
+          "descripcion": "HTTPS + JWT [TLS]"
+        },
+        {
+          "fuente": "sec_oauth",
+          "destino": "sec_abac",
+          "descripcion": "PrincipalClínico"
+        },
+        {
+          "fuente": "sec_oauth",
+          "destino": "sec_cog",
+          "descripcion": "Valida token y atributos"
+        },
+        {
+          "fuente": "sec_abac",
+          "destino": "sec_kms",
+          "descripcion": "Cifrado KMS por contexto"
+        },
+        {
+          "fuente": "sec_abac",
+          "destino": "sec_int",
+          "descripcion": "Permite/deniega auditado"
+        },
+        {
+          "fuente": "sec_int",
+          "destino": "sec_worm",
+          "descripcion": "Append-only Compliance"
+        },
+        {
+          "fuente": "sec_rep",
+          "destino": "sec_worm",
+          "descripcion": "Lee evidencia inmutable"
+        },
+        {
+          "fuente": "sec_aud_actor",
+          "destino": "sec_rep",
+          "descripcion": "Consulta quién vio DOC-X"
+        },
+        {
+          "fuente": "sec_obs",
+          "destino": "sec_cicd",
+          "descripcion": "SLO 99,5% + rollback <=10m"
+        }
+      ]
+    }
+  },
+  "vistas": {
+    "customViews": [
+      {
+        "id": "04edc719-72b3-5232-9e81-06bbba531a91",
+        "name": "DDD · SesiónABAC, TrazaAcceso y SLO",
+        "kind": "graph",
+        "notation": "ddd",
+        "graph": {
+          "nombre_proyecto": "DDD · SesiónABAC, TrazaAcceso y SLO",
+          "notation": "ddd",
+          "notas": "Event Storming y modelo táctico DDD de Seguridad ABAC, Auditoría WORM y Analítica SLO (Sesión 4 · ADR-004/005).",
+          "agregados": [
+            {
+              "nombre_agregado": "Agregado SesiónABAC",
+              "tipo_contenedor": "Agregado",
+              "entidad_raiz": "Evalúa autorización por rol y atributos en capa de servicio.",
+              "descripcion": "Evalúa autorización por rol y atributos en capa de servicio.",
+              "fuente": "Bloque 4.1 · Identidad",
+              "metadata": [
+                {
+                  "clave": "codigo",
+                  "valor": "modules/identidad"
+                }
+              ],
+              "x": 200,
+              "y": 330,
+              "width": 580,
+              "height": 340,
+              "nodos": [
+                {
+                  "id": "sd_id",
+                  "nombre": "PrincipalClínico",
+                  "tipo_elemento": "Raíz de Agregado",
+                  "descripcion": "Identidad con rol, centro rural y especialidades.",
+                  "fuente": "RF-01",
+                  "x": 380,
+                  "y": 378
+                },
+                {
+                  "id": "sd_abac",
+                  "nombre": "AutorizadorABAC",
+                  "tipo_elemento": "Servicio de Dominio",
+                  "descripcion": "Policy @PreAuthorize + AuthorizationManager por centro y paciente.",
+                  "fuente": "Bloque 4.1",
+                  "x": 240,
+                  "y": 518
+                },
+                {
+                  "id": "sd_acl",
+                  "nombre": "ACL OIDC / OAuth2",
+                  "tipo_elemento": "Capa Anticorrupción (ACL)",
+                  "descripcion": "Traduce JWT de Cognito a modelo interno.",
+                  "fuente": "Bloque 4.1",
+                  "x": 520,
+                  "y": 518
+                }
+              ],
+              "aristas": []
+            },
+            {
+              "nombre_agregado": "Agregado TrazaAcceso",
+              "tipo_contenedor": "Agregado",
+              "entidad_raiz": "Evidencia legal inmutable de cada lectura o denegación clínica.",
+              "descripcion": "Evidencia legal inmutable de cada lectura o denegación clínica.",
+              "fuente": "Bloque 4.3 · Auditoría",
+              "metadata": [
+                {
+                  "clave": "codigo",
+                  "valor": "modules/auditoria"
+                }
+              ],
+              "x": 860,
+              "y": 330,
+              "width": 580,
+              "height": 340,
+              "nodos": [
+                {
+                  "id": "sd_traza",
+                  "nombre": "TrazaAccesoClínico",
+                  "tipo_elemento": "Raíz de Agregado",
+                  "descripcion": "Usuario, fecha, recurso, motivo y decisión (permitido/denegado).",
+                  "fuente": "RF-08",
+                  "x": 1040,
+                  "y": 378
+                },
+                {
+                  "id": "sd_worm",
+                  "nombre": "S3ObjectLockRepo",
+                  "tipo_elemento": "Repositorio",
+                  "descripcion": "Escritura append-only Compliance dentro de región única.",
+                  "fuente": "Bloque 4.3",
+                  "x": 900,
+                  "y": 518
+                },
+                {
+                  "id": "sd_reg",
+                  "nombre": "Regla Residencia",
+                  "tipo_elemento": "Regla de Negocio",
+                  "descripcion": "Prohibidas réplicas externas; KMS por contexto con rotación.",
+                  "fuente": "Bloque 4.2",
+                  "x": 1180,
+                  "y": 518
+                }
+              ],
+              "aristas": []
+            }
+          ],
+          "big_picture": {
+            "descripcion": "Event Storming de denegación auditada y generación de reporte reproducible.",
+            "hotspots": [],
+            "nodos": [
+              {
+                "id": "sd_act",
+                "nombre": "Usuario Sin Rol Clínico",
+                "tipo_elemento": "Actor",
+                "descripcion": "Perfil administrativo sin permisos clínicos que intenta consultar una historia clínica.",
+                "fuente": "Bloque 4.1",
+                "x": 30,
+                "y": 93
+              },
+              {
+                "id": "sd_cmd1",
+                "nombre": "SolicitarLecturaClínica",
+                "tipo_elemento": "Comando",
+                "descripcion": "Invoca lectura en capa de servicio evaluando política ABAC por rol, centro y relación asistencial.",
+                "fuente": "Bloque 4.1",
+                "x": 320,
+                "y": 93
+              },
+              {
+                "id": "sd_ev1",
+                "nombre": "AccesoClinicoDenegado",
+                "tipo_elemento": "Evento",
+                "descripcion": "Se emite 403 Forbidden con identificador de usuario, recurso solicitado y motivo.",
+                "fuente": "Bloque 4.1",
+                "x": 620,
+                "y": 93
+              },
+              {
+                "id": "sd_pol",
+                "nombre": "PolíticaAuditoriaObligatoria",
+                "tipo_elemento": "Política",
+                "descripcion": "Cuando ocurre lectura o denegación dispara registro inmutable en transacción independiente.",
+                "fuente": "Bloque 4.3",
+                "x": 920,
+                "y": 93
+              },
+              {
+                "id": "sd_cmd2",
+                "nombre": "ArchivarTrazaWORM",
+                "tipo_elemento": "Comando",
+                "descripcion": "Escribe la evidencia append-only en S3 Object Lock Compliance sin permitir borrado ni rollback.",
+                "fuente": "Bloque 4.3",
+                "x": 1220,
+                "y": 93
+              },
+              {
+                "id": "sd_ev2",
+                "nombre": "TrazaWORMArchivada",
+                "tipo_elemento": "Evento",
+                "descripcion": "Evidencia legal persistida de forma inmutable en S3 Object Lock dentro de la región única.",
+                "fuente": "Bloque 4.3",
+                "x": 1510,
+                "y": 93
+              },
+              {
+                "id": "sd_vis",
+                "nombre": "Reporte Quien Vio Que",
+                "tipo_elemento": "Vista",
+                "descripcion": "Proyección reproducible y versionada que responde quién vio el documento y con qué motivo + SLO 99,5 %.",
+                "fuente": "Bloque 4.3 y 4.4",
+                "x": 1740,
+                "y": 93
+              },
+              {
+                "id": "sd_aud",
+                "nombre": "Auditor Clínico",
+                "tipo_elemento": "Actor",
+                "descripcion": "Ejecuta el reporte reproducible versionado para verificar el 100 % de lecturas y denegaciones.",
+                "fuente": "RF-08",
+                "x": 1740,
+                "y": 378
+              }
+            ],
+            "aristas": [
+              {
+                "fuente": "sd_act",
+                "destino": "sd_cmd1",
+                "descripcion": "intenta leer"
+              },
+              {
+                "fuente": "sd_cmd1",
+                "destino": "sd_ev1",
+                "descripcion": "deniega 100%"
+              },
+              {
+                "fuente": "sd_cmd1",
+                "destino": "sd_id",
+                "descripcion": "evalúa ABAC"
+              },
+              {
+                "fuente": "sd_ev1",
+                "destino": "sd_pol",
+                "descripcion": "dispara"
+              },
+              {
+                "fuente": "sd_pol",
+                "destino": "sd_cmd2",
+                "descripcion": "ordena"
+              },
+              {
+                "fuente": "sd_cmd2",
+                "destino": "sd_ev2",
+                "descripcion": "confirma"
+              },
+              {
+                "fuente": "sd_cmd2",
+                "destino": "sd_traza",
+                "descripcion": "registra inmutable"
+              },
+              {
+                "fuente": "sd_ev2",
+                "destino": "sd_vis",
+                "descripcion": "alimenta"
+              },
+              {
+                "fuente": "sd_vis",
+                "destino": "sd_aud",
+                "descripcion": "entrega reporte"
+              },
+              {
+                "fuente": "sd_id",
+                "destino": "sd_abac",
+                "descripcion": "aplica"
+              },
+              {
+                "fuente": "sd_id",
+                "destino": "sd_acl",
+                "descripcion": "traduce JWT"
+              },
+              {
+                "fuente": "sd_traza",
+                "destino": "sd_worm",
+                "descripcion": "persiste WORM"
+              },
+              {
+                "fuente": "sd_traza",
+                "destino": "sd_reg",
+                "descripcion": "garantiza región"
+              }
+            ]
+          }
+        },
+        "createdAt": "2026-11-24T22:35:00.000Z"
+      },
+      {
+        "id": "cbb59455-ef73-585a-a68b-9e11dae3cf43",
+        "name": "Secuencia · ABAC, Denegación Auditada y Reporte",
+        "kind": "mermaid",
+        "notation": "c4",
+        "mermaidCode": "sequenceDiagram\n    autonumber\n    participant U as Usuario Administrativo (sin rol clínico)\n    participant O as OAuth2 Resource Server (ACL OIDC)\n    participant C as Amazon Cognito + DynamoDB Perfiles\n    participant S as Servicio Clínico (@PreAuthorize + AuthorizationManager)\n    participant I as Interceptor Auditoría (REQUIRES_NEW)\n    participant W as S3 Object Lock (Compliance WORM)\n    participant A as Auditor Clínico\n    participant R as Reporte Reproducible Versionado\n\n    Note over U,W: Región AWS única — TLS en tránsito + KMS en reposo sin réplicas externas\n    U->>O: GET /api/v1/historial/DOC-X (JWT válido, rol=ADMIN)\n    O->>C: Validar firma JWT y atributos (rol, centro, especialidad)\n    C-->>O: PrincipalClínico(rol=ADMIN, sin relación asistencial)\n    O->>S: Invoca caso de uso con contexto de seguridad\n    S->>S: Evalúa AuthorizationManager ABAC en capa de servicio (no controlador)\n    S->>I: Registrar intento denegado (usuario, fecha, DOC-X, motivo, permitido=false)\n    I->>W: PutObject ObjectLockMode=COMPLIANCE (append-only, sin rollback)\n    W-->>I: Evidencia inmutable persistida\n    S-->>U: 403 Forbidden (100 % denegaciones registradas)\n    Note over A,R: Demostración verificable de auditoría (Sesión 4)\n    A->>R: Ejecutar script reporte \"¿Quién vio DOC-X y con qué motivo?\"\n    R->>W: Consultar trazas inmutables de DOC-X\n    W-->>R: Accesos permitidos + intento denegado de ADMIN\n    R-->>A: Reporte reproducible versionado en repositorio\n",
+        "createdAt": "2026-11-24T22:35:00.000Z"
+      }
+    ],
+    "activeViewId": null,
+    "injectedViewIds": [],
+    "openViewIds": []
+  },
+  "compartido": {
+    "references": [],
+    "agent": {
+      "versions": [],
+      "lineages": [],
+      "artifacts": []
+    },
+    "analysis": {}
+  }
+}

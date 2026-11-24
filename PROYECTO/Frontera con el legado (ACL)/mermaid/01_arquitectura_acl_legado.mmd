@@ -1,0 +1,20 @@
+flowchart LR
+  subgraph Monolito_Modular___M_dulo_Integraci_n_Legado["Monolito Modular · Módulo Integración Legado<br/><i>Límite de Contenedor</i>"]
+    acl_ctrl["HistorialLegadoController<br/><i>Componente</i>"]
+    acl_svc["ConsultarHistorialService<br/><i>Componente</i>"]
+    acl_cache_repo["ReadModelHistorialRepo<br/><i>Componente</i>"]
+    acl_port["HistorialClinicoPort<br/><i>Componente</i>"]
+    acl_soap["AdaptadorSoapACL<br/><i>Componente</i>"]
+  end
+  acl_esp("Especialista<br/><i>Persona</i>")
+  acl_aud[("Auditoría Lecturas Clínicas<br/><i>Base de Datos</i>")]
+  acl_cache_db[("Caffeine L1 + ElastiCache L2<br/><i>Base de Datos</i>")]
+  acl_legacy("Legado SOAP + BD Solo Lectura<br/><i>Sistema Externo</i>")
+  acl_esp -->|"GET /historial/{id} [HTTPS]"| acl_ctrl
+  acl_ctrl -->|"Consulta canónica"| acl_svc
+  acl_ctrl -->|"Evento lectura + motivo"| acl_aud
+  acl_svc -->|"1. Lee read model (<= 2 s)"| acl_cache_repo
+  acl_svc -->|"2. Fallback miss (<= 6 s)"| acl_port
+  acl_port -->|"Implementa puerto ACL"| acl_soap
+  acl_cache_repo -->|"L1/L2 + TTL + X-Data-Freshness"| acl_cache_db
+  acl_soap -->|"SOAP / BD RO [Resilience4j]"| acl_legacy

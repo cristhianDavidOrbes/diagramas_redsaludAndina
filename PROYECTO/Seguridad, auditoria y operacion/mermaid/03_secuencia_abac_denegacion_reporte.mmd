@@ -1,0 +1,26 @@
+sequenceDiagram
+    autonumber
+    participant U as Usuario Administrativo (sin rol clínico)
+    participant O as OAuth2 Resource Server (ACL OIDC)
+    participant C as Amazon Cognito + DynamoDB Perfiles
+    participant S as Servicio Clínico (@PreAuthorize + AuthorizationManager)
+    participant I as Interceptor Auditoría (REQUIRES_NEW)
+    participant W as S3 Object Lock (Compliance WORM)
+    participant A as Auditor Clínico
+    participant R as Reporte Reproducible Versionado
+
+    Note over U,W: Región AWS única — TLS en tránsito + KMS en reposo sin réplicas externas
+    U->>O: GET /api/v1/historial/DOC-X (JWT válido, rol=ADMIN)
+    O->>C: Validar firma JWT y atributos (rol, centro, especialidad)
+    C-->>O: PrincipalClínico(rol=ADMIN, sin relación asistencial)
+    O->>S: Invoca caso de uso con contexto de seguridad
+    S->>S: Evalúa AuthorizationManager ABAC en capa de servicio (no controlador)
+    S->>I: Registrar intento denegado (usuario, fecha, DOC-X, motivo, permitido=false)
+    I->>W: PutObject ObjectLockMode=COMPLIANCE (append-only, sin rollback)
+    W-->>I: Evidencia inmutable persistida
+    S-->>U: 403 Forbidden (100 % denegaciones registradas)
+    Note over A,R: Demostración verificable de auditoría (Sesión 4)
+    A->>R: Ejecutar script reporte "¿Quién vio DOC-X y con qué motivo?"
+    R->>W: Consultar trazas inmutables de DOC-X
+    W-->>R: Accesos permitidos + intento denegado de ADMIN
+    R-->>A: Reporte reproducible versionado en repositorio

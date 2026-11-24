@@ -1,0 +1,32 @@
+flowchart LR
+  subgraph Agregado_Sesi_nABAC["Agregado SesiónABAC<br/><i>Agregado</i>"]
+    sd_id(("PrincipalClínico<br/><i>Raíz de Agregado</i>"))
+    sd_abac(("AutorizadorABAC<br/><i>Servicio de Dominio</i>"))
+    sd_acl["ACL OIDC / OAuth2<br/><i>Capa Anticorrupción (ACL)</i>"]
+  end
+  subgraph Agregado_TrazaAcceso["Agregado TrazaAcceso<br/><i>Agregado</i>"]
+    sd_traza(("TrazaAccesoClínico<br/><i>Raíz de Agregado</i>"))
+    sd_worm(("S3ObjectLockRepo<br/><i>Repositorio</i>"))
+    sd_reg(("Regla Residencia<br/><i>Regla de Negocio</i>"))
+  end
+  sd_act("Usuario Sin Rol Clínico<br/><i>Actor</i>")
+  sd_cmd1(("SolicitarLecturaClínica<br/><i>Comando</i>"))
+  sd_ev1(("AccesoClinicoDenegado<br/><i>Evento</i>"))
+  sd_pol(("PolíticaAuditoriaObligatoria<br/><i>Política</i>"))
+  sd_cmd2(("ArchivarTrazaWORM<br/><i>Comando</i>"))
+  sd_ev2(("TrazaWORMArchivada<br/><i>Evento</i>"))
+  sd_vis(("Reporte Quien Vio Que<br/><i>Vista</i>"))
+  sd_aud("Auditor Clínico<br/><i>Actor</i>")
+  sd_act -->|"intenta leer"| sd_cmd1
+  sd_cmd1 -->|"deniega 100%"| sd_ev1
+  sd_cmd1 -->|"evalúa ABAC"| sd_id
+  sd_ev1 -->|"dispara"| sd_pol
+  sd_pol -->|"ordena"| sd_cmd2
+  sd_cmd2 -->|"confirma"| sd_ev2
+  sd_cmd2 -->|"registra inmutable"| sd_traza
+  sd_ev2 -->|"alimenta"| sd_vis
+  sd_vis -->|"entrega reporte"| sd_aud
+  sd_id -->|"aplica"| sd_abac
+  sd_id -->|"traduce JWT"| sd_acl
+  sd_traza -->|"persiste WORM"| sd_worm
+  sd_traza -->|"garantiza región"| sd_reg

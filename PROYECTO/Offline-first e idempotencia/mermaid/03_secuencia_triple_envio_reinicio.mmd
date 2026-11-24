@@ -1,0 +1,43 @@
+sequenceDiagram
+    autonumber
+    participant C as Cliente en centro (UUID/ULID estable)
+    participant LB as Balanceador
+    participant S as POST /sync/episodios
+    participant ID as Tabla Idempotency-Key (UNIQUE)
+    participant DB as Aurora PostgreSQL
+    participant OB as Outbox (misma tx)
+    participant P as Publicador Outbox
+    participant Q as SQS FIFO (orden por agregado)
+    participant K as Consumidor idempotente
+    participant A as Auditoría (ambos valores LWW)
+
+    Note over C: 5 de 14 centros con 2 Mbps y cortes diarios
+    C->>LB: Lote L1 (episodio=ULID-42, Idempotency-Key=K1)
+    LB->>S: Intento 1
+    S->>ID: ¿Existe K1?
+    ID-->>S: No
+    S->>DB: INSERT episodio (ULID-42)
+    DB-->>S: OK (unique constraint)
+    S->>OB: Evento en la MISMA transacción
+    S->>ID: Persistir K1 + respuesta R
+    S-->>C: 201 R
+    P->>OB: Drena eventos pendientes
+    P->>Q: Publica con MessageGroupId = agregadoId (at-least-once)
+    Q->>K: Entrega ordenada por agregado
+    K->>K: Deduplica por eventoId
+    K->>A: Aplica LWW asistencial + registra ambos valores en conflicto
+    Note over C,S: Corte de red — reintento 2 del MISMO lote
+    C->>LB: Lote L1 (ULID-42, K1) — intento 2
+    LB->>S: Reintento
+    S->>ID: ¿Existe K1?
+    ID-->>S: Sí, respuesta R
+    S-->>C: 200 R (sin nuevo INSERT)
+    Note over S,DB: Reinicio del proceso — la memoria no sobrevive
+    C->>LB: Lote L1 (ULID-42, K1) — intento 3
+    LB->>S: Reintento (otra instancia)
+    S->>ID: ¿Existe K1 en BD?
+    ID-->>S: Sí, respuesta R
+    S-->>C: 200 R (0 duplicados, 0 pérdida)
+    Note over C,A: Cupos y recetas firmadas NO se resuelven en el borde
+    C->>S: Reserva de cupo / receta firmada offline
+    S-->>C: 409 Rechazo + reintento contra servidor (consistencia fuerte)

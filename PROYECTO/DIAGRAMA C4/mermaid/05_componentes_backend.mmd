@@ -1,0 +1,24 @@
+flowchart LR
+  subgraph agg_Backend_monol_tico["Backend monolítico · RedSalud Andina<br/><i>Límite de Contenedor</i>"]
+    identidad["Identidad y autorización<br/><i>Componente</i>"]
+    agenda["Agenda y reservas<br/><i>Componente</i>"]
+    receta["Receta electrónica<br/><i>Componente</i>"]
+    historial["Historial clínico<br/><i>Componente</i>"]
+    sincronizacion["Sincronización offline<br/><i>Componente</i>"]
+    auditoria["Auditoría<br/><i>Componente</i>"]
+    adaptador["Adaptador del legado<br/><i>Componente</i>"]
+    episodio["Episodio de teleconsulta<br/><i>Componente</i>"]
+    interconsultas["Interconsultas<br/><i>Componente</i>"]
+    indicadores["Indicadores<br/><i>Componente</i>"]
+  end
+  sincronizacion -->|"Aplica reservas offline"| agenda
+  sincronizacion -->|"Aplica adjuntos offline"| episodio
+  agenda -->|"ReservaEnConflicto [evento]"| sincronizacion
+  agenda -->|"ReservaConfirmada [evento]"| interconsultas
+  episodio -->|"TeleconsultaAtendida [evento]"| interconsultas
+  historial -->|"obtenerHistorial"| adaptador
+  historial -->|"HistorialConsultado [evento]"| auditoria
+  identidad -->|"AccesoDenegado [evento]"| auditoria
+  interconsultas -->|"Cambios de estado [evento]"| indicadores
+  receta -->|"RecetaEmitida [evento]"| indicadores
+  interconsultas -->|"Alerta de pendiente"| interconsultas

@@ -1,0 +1,20 @@
+flowchart LR
+  subgraph agg_sistema_de_salud["sistema de salud<br/><i>Límite de Sistema</i>"]
+    redsalud("RedSalud Andina<br/><i>Sistema</i>")
+  end
+  people("Pacientes<br/><i>Persona</i>")
+  specialist("Especialistas<br/><i>Persona</i>")
+  manager("Gestor y auditor<br/><i>Persona</i>")
+  old("Legado clínico<br/><i>Sistema Externo</i>")
+  video("Video gestionado nacional<br/><i>Sistema Externo</i>")
+  pharmacy("Firma y farmacia<br/><i>Sistema Externo</i>")
+  idp("Proveedor de identidad<br/><i>Sistema Externo</i>")
+  medicos_rurales("Médicos rurales<br/><i>Persona</i>")
+  people -->|"Recibir atención"| redsalud
+  specialist -->|"Atención y receta"| redsalud
+  manager -->|"Control y evidencia"| redsalud
+  redsalud -->|"Consultar historial"| old
+  redsalud -->|"Organizar teleconsulta"| video
+  redsalud -->|"Enviar receta firmada"| pharmacy
+  redsalud -->|"Autenticar [OIDC]"| idp
+  medicos_rurales -->|"Registrar y agendar"| redsalud

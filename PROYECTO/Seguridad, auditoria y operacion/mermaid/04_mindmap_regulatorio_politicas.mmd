@@ -1,0 +1,24 @@
+mindmap
+  root((Regulatorio y políticas RedSalud Andina))
+    Residencia del dato
+      Datos clínicos no salen del país
+      Región única AWS sin réplicas externas
+      Bucket adjuntos sin replicación cross-region
+    PII y datos sensibles
+      Identificador paciente, adjuntos y receta firmada
+      Médicos rurales, especialistas y roles
+      Minimización en vista de lectura legado
+    Control de acceso ABAC
+      Autorización por rol y atributo (centro, especialidad, relación)
+      Evaluación en capa de servicio (@PreAuthorize + AuthorizationManager)
+      Propiedad del dato por contexto delimitado
+    Cifrado y claves
+      TLS en tránsito
+      KMS en reposo con claves por contexto y rotación
+    Auditoría y trazabilidad
+      Evento por cada lectura clínica y 100% de denegaciones
+      Almacén append-only S3 Object Lock Compliance
+      Reporte reproducible: quién vio este documento y con qué motivo
+    Operación y resiliencia
+      Micrometer + OpenTelemetry + Actuator (SLO 99,5%)
+      CI/CD + IaC con rollback <= 10 min

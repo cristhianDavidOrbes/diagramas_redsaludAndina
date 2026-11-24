@@ -1,0 +1,117 @@
+flowchart LR
+  subgraph agg_Paciente___solicitud_y_notificaci_n["paciente<br/><i>Pool</i>"]
+    general_v2_pedir_cita["Solicitar cita<br/><i>Tarea</i>"]
+    general_v2_notificacion(("Recibir respuesta de cita<br/><i>Evento de Mensaje</i>"))
+    general_v2_fin_paciente(("Respuesta recibida<br/><i>Evento de Fin</i>"))
+  end
+  subgraph agg_Legado___consulta_autorizada["Legado · consulta autorizada<br/><i>Pool</i>"]
+    general_v2_consulta_externa["Leer fuente autorizada<br/><i>Tarea</i>"]
+    general_v2_legado_disponible{"¿Lectura disponible?<br/><i>Compuerta Exclusiva</i>"}
+    general_v2_legado_ok(("Devolver antecedentes<br/><i>Evento de Fin</i>"))
+    general_v2_legado_no(("Informar indisponibilidad<br/><i>Evento de Fin</i>"))
+  end
+  subgraph agg_Farmacia___recibir_y_confirmar["Farmacia · recibir y confirmar<br/><i>Pool</i>"]
+    general_v2_recibir_receta["Recibir receta firmada<br/><i>Tarea</i>"]
+    general_v2_farmacia_guardada{"¿Recepción guardada?<br/><i>Compuerta Exclusiva</i>"}
+    general_v2_farmacia_ok(("Confirmar recepción<br/><i>Evento de Fin</i>"))
+    general_v2_farmacia_no(("Informar error de recepción<br/><i>Evento de Fin</i>"))
+  end
+  subgraph general_v2_lane_0["Centro rural · solicitud<br/><i>Carril</i>"]
+    general_v2_inicio(("Solicitud recibida<br/><i>Evento de Inicio</i>"))
+    general_v2_validar["Validar al paciente<br/><i>Tarea</i>"]
+    general_v2_identidad{"¿Datos válidos?<br/><i>Compuerta Exclusiva</i>"}
+    general_v2_datos_invalidos(("Solicitud rechazada<br/><i>Evento de Fin</i>"))
+  end
+  subgraph general_v2_lane_1["Agenda · reserva confirmada<br/><i>Carril</i>"]
+    general_v2_solicitar["Agendar la cita<br/><i>Subproceso</i>"]
+    general_v2_cupo{"¿Reserva confirmada?<br/><i>Compuerta Exclusiva</i>"}
+    general_v2_confirmada(("Cita confirmada<br/><i>Evento Intermedio</i>"))
+    general_v2_hora(("Fecha de la cita<br/><i>Evento Temporizador</i>"))
+    general_v2_alternativa["Ofrecer alternativa<br/><i>Tarea</i>"]
+    general_v2_citas[("Reservas · BD<br/><i>Almacén de Datos</i>")]
+    general_v2_agenda_pendiente(("Cita por reprogramar<br/><i>Evento de Fin</i>"))
+  end
+  subgraph general_v2_lane_2["Especialista · atención y receta<br/><i>Carril</i>"]
+    general_v2_revisar["Revisar cita asignada<br/><i>Tarea</i>"]
+    general_v2_conexion{"¿Hay conexión?<br/><i>Compuerta Exclusiva</i>"}
+    general_v2_local["Guardar borrador local<br/><i>Tarea</i>"]
+    general_v2_red(("Conexión recuperada<br/><i>Evento Intermedio</i>"))
+    general_v2_sync["Sincronizar el borrador<br/><i>Tarea</i>"]
+    general_v2_pendiente(("Atención por reprogramar<br/><i>Evento de Fin</i>"))
+    general_v2_cola[("Pendientes · disco local<br/><i>Almacén de Datos</i>")]
+    general_v2_atender["Atender y registrar<br/><i>Subproceso</i>"]
+    general_v2_atendida{"¿Atención registrada?<br/><i>Compuerta Exclusiva</i>"}
+    general_v2_indicacion{"¿Se necesita receta?<br/><i>Compuerta Exclusiva</i>"}
+    general_v2_receta["Prescribir y firmar<br/><i>Subproceso</i>"]
+    general_v2_emitida{"¿Firma y guardado válidos?<br/><i>Compuerta Exclusiva</i>"}
+    general_v2_rx_emitida(("Receta emitida<br/><i>Evento Intermedio</i>"))
+    general_v2_sin_receta(("Atención terminada<br/><i>Evento de Fin</i>"))
+    general_v2_error_receta(("Receta no emitida<br/><i>Evento de Error</i>"))
+    general_v2_rx_pendiente(("Prescripción por corregir<br/><i>Evento de Fin</i>"))
+    general_v2_clinica[("Episodio clínico · BD<br/><i>Almacén de Datos</i>")]
+    general_v2_outbox[("Recetas y envíos · BD<br/><i>Almacén de Datos</i>")]
+  end
+  subgraph general_v2_lane_3["Historial · lectura y auditoría<br/><i>Carril</i>"]
+    general_v2_historial["Consultar el historial<br/><i>Subproceso</i>"]
+    general_v2_datos{"¿Lectura autorizada disponible?<br/><i>Compuerta Exclusiva</i>"}
+    general_v2_auditar["Registrar auditoría<br/><i>Tarea</i>"]
+    general_v2_auditada{"¿Auditoría guardada?<br/><i>Compuerta Exclusiva</i>"}
+    general_v2_error_historial(("Lectura no disponible<br/><i>Evento de Error</i>"))
+    general_v2_error_auditoria(("Fallo al guardar auditoría<br/><i>Evento de Error</i>"))
+    general_v2_historial_pendiente(("Consulta bloqueada · revisar<br/><i>Evento de Fin</i>"))
+    general_v2_lectura[("Historial · copia de lectura<br/><i>Almacén de Datos</i>")]
+    general_v2_evidencia[("Auditoría · registro inmutable<br/><i>Almacén de Datos</i>")]
+    general_v2_enviar["Entregar a farmacia<br/><i>Tarea</i>"]
+    general_v2_entregada{"¿Farmacia confirmó?<br/><i>Compuerta Exclusiva</i>"}
+    general_v2_espera_envio(("Esperar reintento<br/><i>Evento Temporizador</i>"))
+    general_v2_fin(("Receta entregada<br/><i>Evento de Fin</i>"))
+  end
+  subgraph general_v2_frame["Procesos de RedAndina · proceso general<br/><i>Pool</i>"]
+  end
+  general_v2_notificacion --> general_v2_fin_paciente
+  general_v2_pedir_cita -->|"interactúa"| general_v2_notificacion
+  general_v2_legado_disponible -->|"Sí"| general_v2_legado_ok
+  general_v2_legado_disponible -->|"No"| general_v2_legado_no
+  general_v2_consulta_externa -->|"interactúa"| general_v2_legado_disponible
+  general_v2_farmacia_guardada -->|"Sí"| general_v2_farmacia_ok
+  general_v2_farmacia_guardada -->|"No"| general_v2_farmacia_no
+  general_v2_recibir_receta -->|"interactúa"| general_v2_farmacia_guardada
+  general_v2_identidad -->|"interactúa"| general_v2_datos_invalidos
+  general_v2_validar -->|"interactúa"| general_v2_identidad
+  general_v2_inicio -->|"interactúa"| general_v2_validar
+  general_v2_cupo -->|"Sí"| general_v2_confirmada
+  general_v2_confirmada --> general_v2_hora
+  general_v2_solicitar -->|"interactúa"| general_v2_cupo
+  general_v2_solicitar -->|"interactúa"| general_v2_citas
+  general_v2_alternativa -->|"interactúa"| general_v2_agenda_pendiente
+  general_v2_cupo -->|"no"| general_v2_alternativa
+  general_v2_local --> general_v2_red
+  general_v2_red --> general_v2_sync
+  general_v2_sync --> general_v2_pendiente
+  general_v2_atendida -->|"Sí"| general_v2_indicacion
+  general_v2_indicacion -->|"Sí"| general_v2_receta
+  general_v2_indicacion -->|"No"| general_v2_sin_receta
+  general_v2_receta --> general_v2_emitida
+  general_v2_emitida -->|"Sí"| general_v2_rx_emitida
+  general_v2_emitida -->|"No"| general_v2_error_receta
+  general_v2_local -->|"Guardar operación"| general_v2_cola
+  general_v2_receta -->|"Guardar atómicamente"| general_v2_outbox
+  general_v2_conexion -->|"no"| general_v2_local
+  general_v2_atender -->|"Guardar nota y estado"| general_v2_clinica
+  general_v2_atender -->|"interactúa"| general_v2_atendida
+  general_v2_atendida -->|"No"| general_v2_pendiente
+  general_v2_error_receta -->|"interactúa"| general_v2_rx_pendiente
+  general_v2_revisar -->|"interactua"| general_v2_conexion
+  general_v2_error_historial --> general_v2_historial_pendiente
+  general_v2_auditada -->|"No"| general_v2_error_auditoria
+  general_v2_enviar --> general_v2_entregada
+  general_v2_entregada -->|"Sí"| general_v2_fin
+  general_v2_entregada -->|"No"| general_v2_espera_envio
+  general_v2_espera_envio -->|"Reintentar"| general_v2_enviar
+  general_v2_auditar --> general_v2_auditada
+  general_v2_datos -->|"no"| general_v2_error_historial
+  general_v2_auditar -->|"interactúa"| general_v2_evidencia
+  general_v2_error_auditoria -->|"interactúa"| general_v2_historial_pendiente
+  general_v2_historial -->|"interactúa"| general_v2_lectura
+  general_v2_datos -->|"si"| general_v2_auditar
+  general_v2_historial -->|"interactúa"| general_v2_datos

@@ -1,0 +1,23 @@
+sequenceDiagram
+  title La receta se guarda antes de enviarse y nunca se pierde (RF-05)
+  actor E as Especialista
+  participant W as Aplicación web
+  participant RE as Receta electrónica
+  participant I as Identidad y autorización
+  participant IND as Indicadores
+  participant F as Firma y farmacia
+  E->>W: firma la receta
+  W->>RE: POST /api/v1/episodios/{id}/recetas
+  RE->>I: ¿permiso?
+  I-->>RE: permitido
+  RE->>RE: guarda receta + outbox (misma transacción)
+  RE-)IND: RecetaEmitida
+  RE-->>W: 201 pendiente de envío
+  alt la farmacia responde
+    RE->>F: POST /farmacia/v1/recetas
+    F-->>RE: 202 recibida
+    RE->>RE: marca enviada
+  else no responde
+    RE->>RE: reintenta con espera creciente
+  end
+  Note over RE,F: Canal de la farmacia por acordar con la red (ADR-008)

@@ -1,0 +1,33 @@
+flowchart LR
+  subgraph agg_RedSalud___Especialista["RedSalud · Especialista<br/><i>Carril</i>"]
+    sub03_inicio(("Indicación activa<br/><i>Evento de Inicio</i>"))
+    sub03_validar["Verificar prescriptor<br/><i>Tarea</i>"]
+    sub03_permiso{"¿Prescriptor habilitado?<br/><i>Compuerta Exclusiva</i>"}
+    sub03_preparar["Preparar y validar receta<br/><i>Tarea</i>"]
+    sub03_firmar["Solicitar firma KMS<br/><i>Tarea</i>"]
+    sub03_firma_ok{"¿Firma aceptada?<br/><i>Compuerta Exclusiva</i>"}
+    sub03_confirmar["Sellar receta y outbox<br/><i>Tarea</i>"]
+    sub03_kms_store[("Firma y hash KMS · BD<br/><i>Almacén de Datos</i>")]
+  end
+  subgraph agg_RedSalud___Receta_y_seguimiento["RedSalud · Receta y seguimiento<br/><i>Carril</i>"]
+    sub03_rechazo["Auditar rechazo emisión<br/><i>Tarea</i>"]
+    sub03_fin_rechazo(("Prescripción denegada<br/><i>Evento de Fin</i>"))
+    sub03_fallo["Guardar fallo de firma<br/><i>Tarea</i>"]
+    sub03_fin_fallo(("Firma fallida · corregir<br/><i>Evento de Fin</i>"))
+    sub03_tx_ok{"¿Tx atómica guardada?<br/><i>Compuerta Exclusiva</i>"}
+    sub03_rollback["Revertir sin emitir<br/><i>Tarea</i>"]
+    sub03_fin_abort(("Emisión revertida<br/><i>Evento de Fin</i>"))
+    sub03_fin_ok(("Receta lista para envío<br/><i>Evento de Fin</i>"))
+  end
+  sub03_inicio --> sub03_validar
+  sub03_validar --> sub03_permiso
+  sub03_permiso -->|"Sí, autorizado"| sub03_preparar
+  sub03_preparar --> sub03_firmar
+  sub03_firmar --> sub03_firma_ok
+  sub03_firma_ok -->|"Sí, válida"| sub03_confirmar
+  sub03_confirmar -->|"Guardar hash y firma"| sub03_kms_store
+  sub03_rechazo --> sub03_fin_rechazo
+  sub03_fallo --> sub03_fin_fallo
+  sub03_tx_ok -->|"No, rollback"| sub03_rollback
+  sub03_rollback --> sub03_fin_abort
+  sub03_tx_ok -->|"Sí, atómica"| sub03_fin_ok

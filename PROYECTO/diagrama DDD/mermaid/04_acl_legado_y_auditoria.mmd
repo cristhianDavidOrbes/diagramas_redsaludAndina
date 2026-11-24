@@ -1,0 +1,32 @@
+flowchart LR
+  subgraph Agregado_HistorialVista["Agregado HistorialVista<br/><i>Agregado</i>"]
+    s4_root_hist(("HistorialCanónico<br/><i>Raíz de Agregado</i>"))
+    s4_rep_cache(("CacheTwoLevelRepo<br/><i>Repositorio</i>"))
+    s4_srv_abac(("AutorizadorABAC<br/><i>Servicio de Dominio</i>"))
+  end
+  subgraph Agregado_TrazaAcceso["Agregado TrazaAcceso<br/><i>Agregado</i>"]
+    s4_root_aud(("TrazaAccesoClínico<br/><i>Raíz de Agregado</i>"))
+    s4_rep_worm(("S3ObjectLockRepo<br/><i>Repositorio</i>"))
+  end
+  s4_act_esp("Especialista<br/><i>Actor</i>")
+  s4_cmd_cons(("ConsultarHistorial<br/><i>Comando</i>"))
+  s4_ev_lect(("LecturaAuditada<br/><i>Evento</i>"))
+  s4_pol_aud(("PolíticaTrazabilidad<br/><i>Política</i>"))
+  s4_cmd_aud(("RegistrarTrazaWORM<br/><i>Comando</i>"))
+  s4_ev_worm(("TrazaGrabadaWORM<br/><i>Evento</i>"))
+  s4_act_aud("Auditor Clínico<br/><i>Actor</i>")
+  s4_acl_soap["ACL SOAP Nocturno<br/><i>Capa Anticorrupción (ACL)</i>"]
+  s4_ext_soap("Legado SOAP + BD RO<br/><i>Sistema Externo</i>")
+  s4_act_esp -->|"ejecuta"| s4_cmd_cons
+  s4_cmd_cons -->|"produce"| s4_ev_lect
+  s4_cmd_cons -->|"consulta modelo"| s4_root_hist
+  s4_root_hist -->|"lee caché TTL"| s4_rep_cache
+  s4_root_hist -->|"exige ABAC"| s4_srv_abac
+  s4_root_hist -->|"usa puerto ACL"| s4_acl_soap
+  s4_acl_soap -->|"llama con CB"| s4_ext_soap
+  s4_ev_lect -->|"activa"| s4_pol_aud
+  s4_pol_aud -->|"emite"| s4_cmd_aud
+  s4_cmd_aud -->|"produce"| s4_ev_worm
+  s4_cmd_aud -->|"invoca agregado"| s4_root_aud
+  s4_root_aud -->|"graba compliance"| s4_rep_worm
+  s4_ev_worm -->|"reporta"| s4_act_aud

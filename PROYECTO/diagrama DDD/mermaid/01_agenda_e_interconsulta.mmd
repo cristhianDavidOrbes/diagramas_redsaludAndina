@@ -1,0 +1,32 @@
+flowchart LR
+  subgraph Agregado_Interconsulta["Agregado Interconsulta<br/><i>Agregado</i>"]
+    s1_root_int(("Interconsulta<br/><i>Raíz de Agregado</i>"))
+    s1_vo_est(("EstadoDerivación<br/><i>Objeto de Valor</i>"))
+    s1_rep_int(("RepoInterconsultas<br/><i>Repositorio</i>"))
+  end
+  subgraph Agregado_CupoCita["Agregado CupoCita<br/><i>Agregado</i>"]
+    s1_root_cupo(("CupoEspecialista<br/><i>Raíz de Agregado</i>"))
+    s1_ent_cita(("CitaTelemedicina<br/><i>Entidad</i>"))
+    s1_rep_cupo(("RepoCuposOptimista<br/><i>Repositorio</i>"))
+  end
+  s1_act_med("Médico Rural<br/><i>Actor</i>")
+  s1_cmd_sol(("SolicitarInterconsulta<br/><i>Comando</i>"))
+  s1_ev_sol(("InterconsultaSolicitada<br/><i>Evento</i>"))
+  s1_pol_res(("PolíticaReservaCupo<br/><i>Política</i>"))
+  s1_cmd_res(("ReservarCupo<br/><i>Comando</i>"))
+  s1_ev_cupo(("CupoReservado<br/><i>Evento</i>"))
+  s1_act_esp("Especialista<br/><i>Actor</i>")
+  s1_reg_ver(("Regla Sin Doble Reserva<br/><i>Regla de Negocio</i>"))
+  s1_act_med -->|"ejecuta"| s1_cmd_sol
+  s1_cmd_sol -->|"produce"| s1_ev_sol
+  s1_cmd_sol -->|"invoca agregado"| s1_root_int
+  s1_root_int -->|"valida estado"| s1_vo_est
+  s1_root_int -->|"persiste"| s1_rep_int
+  s1_ev_sol -->|"activa"| s1_pol_res
+  s1_pol_res -->|"emite"| s1_cmd_res
+  s1_cmd_res -->|"produce"| s1_ev_cupo
+  s1_cmd_res -->|"invoca agregado"| s1_root_cupo
+  s1_reg_ver -->|"restringe @Version"| s1_root_cupo
+  s1_root_cupo -->|"crea cita"| s1_ent_cita
+  s1_root_cupo -->|"guarda tx"| s1_rep_cupo
+  s1_ev_cupo -->|"notifica"| s1_act_esp

@@ -1,0 +1,23 @@
+flowchart LR
+  in["Adaptadores de entrada<br/><i>Componente</i>"]
+  ag["Agenda e interconsulta<br/><i>Componente</i>"]
+  ep["Episodio clínico<br/><i>Componente</i>"]
+  rx["Receta y farmacia<br/><i>Componente</i>"]
+  seg["Seguimiento e indicadores<br/><i>Componente</i>"]
+  sync["Sincronización idempotente<br/><i>Componente</i>"]
+  audit["Autorización y auditoría<br/><i>Componente</i>"]
+  ports["Puertos de salida<br/><i>Componente</i>"]
+  adap["Adaptadores externos<br/><i>Componente</i>"]
+  in -->|"Invoca casos de uso"| ag
+  in -->|"Invoca casos de uso"| ep
+  in -->|"Invoca casos de uso"| rx
+  in -->|"Recibe lote local"| sync
+  sync -->|"Valida cupos online"| ag
+  sync -->|"Aplica versión válida"| ep
+  ag -->|"Evento interno + outbox"| seg
+  ep -->|"Autoriza y registra"| audit
+  rx -->|"Autoriza y registra"| audit
+  ag -->|"Usa contratos"| ports
+  ep -->|"Usa contratos"| ports
+  rx -->|"Usa contratos"| ports
+  ports -->|"Implementa contratos"| adap

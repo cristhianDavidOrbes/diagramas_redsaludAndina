@@ -1,0 +1,36 @@
+flowchart LR
+  subgraph agg_Aplicaci_n_web___React___PWA["Aplicación web - React / PWA<br/><i>Límite de Contenedor</i>"]
+    web_nav["Navegación<br/><i>Componente</i>"]
+    web_security["Seguridad de sesión<br/><i>Componente</i>"]
+    web_agenda["Agenda e interconsultas<br/><i>Componente</i>"]
+    web_care["Atención y documentos<br/><i>Componente</i>"]
+    web_prescriptions["Recetas y seguimiento<br/><i>Componente</i>"]
+    web_profile["Usuarios y perfil<br/><i>Componente</i>"]
+    web_offline["Registros pendientes<br/><i>Componente</i>"]
+    web_api["Cliente de la API<br/><i>Componente</i>"]
+  end
+  web_patient("Pacientes<br/><i>Persona</i>")
+  web_doctor("Médicos rurales<br/><i>Persona</i>")
+  web_specialist("Especialistas<br/><i>Persona</i>")
+  web_manager("Gestor y auditor<br/><i>Persona</i>")
+  web_backend("Backend monolítico<br/><i>Contenedor</i>")
+  web_video("Video gestionado nacional<br/><i>Sistema Externo</i>")
+  web_patient -->|"Accede según su rol"| web_nav
+  web_doctor -->|"Accede según su rol"| web_nav
+  web_specialist -->|"Accede según su rol"| web_nav
+  web_manager -->|"Accede según su rol"| web_nav
+  web_api -->|"API REST [HTTPS]"| web_backend
+  web_care -->|"Audio/video [WebRTC]"| web_video
+  web_nav -->|"Verifica sesión"| web_security
+  web_nav -->|"Abre citas"| web_agenda
+  web_nav -->|"Abre atención"| web_care
+  web_nav -->|"Abre seguimiento"| web_prescriptions
+  web_nav -->|"Abre perfil"| web_profile
+  web_agenda -->|"Consulta y reserva"| web_api
+  web_care -->|"Consulta y registra"| web_api
+  web_prescriptions -->|"Consulta y solicita"| web_api
+  web_profile -->|"Consulta y actualiza"| web_api
+  web_security -->|"Autentica sesión"| web_api
+  web_agenda -->|"Guarda solicitud pendiente"| web_offline
+  web_care -->|"Guarda borrador"| web_offline
+  web_offline -->|"Sincroniza al reconectar"| web_api

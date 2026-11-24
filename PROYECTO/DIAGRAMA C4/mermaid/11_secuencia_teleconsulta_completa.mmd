@@ -1,0 +1,24 @@
+sequenceDiagram
+  title La interconsulta cambia de estado con cada evento (RF-02, RF-03, RF-04, RF-07)
+  actor M as Médico rural
+  actor P as Paciente
+  actor E as Especialista
+  participant IN as Interconsultas
+  participant AG as Agenda y reservas
+  participant EP as Episodio de teleconsulta
+  participant V as Video gestionado nacional
+  M->>IN: POST /interconsultas
+  IN-->>M: 201 solicitada
+  M->>AG: POST /reservas
+  AG-)IN: ReservaConfirmada (agendada)
+  AG-->>M: 201 confirmada
+  M->>EP: POST /episodios/{id}/adjuntos
+  P->>EP: POST /episodios/{id}/sala
+  E->>EP: POST /episodios/{id}/admision
+  EP->>V: crearSesion(episodioId)
+  V-->>EP: sesionVideo
+  EP-->>E: 200 + token de sesión
+  E-)V: audio y video por WebRTC (no pasa por el backend)
+  E->>EP: cierra la consulta
+  EP-)IN: TeleconsultaAtendida (atendida)
+  Note over IN: El gestor de red la cierra después

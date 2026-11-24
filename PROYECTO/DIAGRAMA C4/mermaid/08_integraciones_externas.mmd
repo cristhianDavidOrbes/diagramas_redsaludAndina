@@ -1,0 +1,23 @@
+flowchart LR
+  subgraph agg_Backend_monol_tico["Backend monolítico · RedSalud Andina<br/><i>Límite de Contenedor</i>"]
+    identidad["Identidad y autorización<br/><i>Componente</i>"]
+    episodio["Episodio de teleconsulta<br/><i>Componente</i>"]
+    receta["Receta electrónica<br/><i>Componente</i>"]
+    adaptador["Adaptador del legado<br/><i>Componente</i>"]
+    auditoria["Auditoría<br/><i>Componente</i>"]
+  end
+  sincronizador("Sincronizador nocturno del legado<br/><i>Contenedor</i>")
+  s3[("Archivo inmutable de auditoría<br/><i>Base de Datos</i>")]
+  redis[("Proyección del historial en Redis<br/><i>Base de Datos</i>")]
+  idp("Proveedor de identidad OIDC<br/><i>Sistema Externo</i>")
+  video("Servicio nacional de video<br/><i>Sistema Externo</i>")
+  farmacia("Firma y farmacia del centro<br/><i>Sistema Externo</i>")
+  legado("Sistema clínico legado<br/><i>Sistema Externo</i>")
+  idp -->|"Emite JWT [OIDC]"| identidad
+  episodio -->|"Crea sesión [HTTPS]"| video
+  receta -->|"Envía receta [HTTPS, outbox]"| farmacia
+  adaptador -->|"Lee vista [Redis]"| redis
+  adaptador -->|"Lectura puntual [VPN, 6 s]"| legado
+  sincronizador -->|"Carga nocturna [SOAP/VPN]"| legado
+  sincronizador -->|"Actualiza la proyección [Redis]"| redis
+  auditoria -->|"Archiva vía SQS y Lambda"| s3

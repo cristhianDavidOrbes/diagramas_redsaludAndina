@@ -1,0 +1,23 @@
+sequenceDiagram
+  title Lo registrado sin conexión se aplica una sola vez al volver el enlace (RF-02, RF-09)
+  actor M as Médico rural
+  participant C as Cliente rural offline
+  participant S as Sincronización offline
+  participant AG as Agenda y reservas
+  participant IN as Interconsultas
+  M->>C: reserva un cupo
+  opt el centro está sin conexión
+    C->>C: guarda el evento con eventoId único
+  end
+  Note over C,S: vuelve el enlace
+  C->>S: POST /api/v1/sincronizacion/lotes
+  S->>S: descarta eventos ya aplicados
+  S->>AG: aplica la reserva
+  alt cupo libre
+    AG-)IN: ReservaConfirmada (pasa a agendada)
+  else cupo tomado
+    AG-)S: ReservaEnConflicto
+  end
+  S-->>C: ResultadoLote (aplicados, duplicados, conflictos)
+  C-->>M: confirmada o reprogramar
+  Note over S,AG: Regla de conflicto propuesta por el equipo (ADR-003)

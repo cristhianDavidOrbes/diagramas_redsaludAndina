@@ -1,0 +1,24 @@
+flowchart LR
+  subgraph Borde___5_Centros_Rurales__2_Mbps_["Borde · 5 Centros Rurales (2 Mbps)<br/><i>Límite de Contenedor</i>"]
+    off_pwa("Cliente Offline-First<br/><i>Contenedor</i>")
+    off_local_q[("Cola Local Cifrada<br/><i>Base de Datos</i>")]
+  end
+  subgraph Monolito_Modular___M_dulo_Sincronizaci_n["Monolito Modular · Módulo Sincronización<br/><i>Límite de Contenedor</i>"]
+    off_api["POST /sync/episodios<br/><i>Componente</i>"]
+    off_conflict["Resolutor de Conflictos<br/><i>Componente</i>"]
+    off_outbox["Publicador Outbox<br/><i>Componente</i>"]
+    off_cons["Consumidor Idempotente<br/><i>Componente</i>"]
+  end
+  off_med("Médico Rural<br/><i>Persona</i>")
+  off_aurora[("Aurora (UNIQUE + Outbox)<br/><i>Base de Datos</i>")]
+  off_sqs("SQS FIFO (Orden por Agregado)<br/><i>Sistema Externo</i>")
+  off_aud[("Auditoría Doble Valor (LWW)<br/><i>Base de Datos</i>")]
+  off_med -->|"Captura asistencial offline"| off_pwa
+  off_pwa -->|"Encola lote (UUID/ULID + ts)"| off_local_q
+  off_local_q -->|"Reintento con Idempotency-Key"| off_api
+  off_api -->|"Evalúa política de conflicto"| off_conflict
+  off_api -->|"Tx atómica K1 + outbox"| off_aurora
+  off_outbox -->|"Drena outbox pendiente"| off_aurora
+  off_outbox -->|"Publica ordenado por agregado"| off_sqs
+  off_sqs -->|"Entrega at-least-once"| off_cons
+  off_cons -->|"Audita ambos valores LWW"| off_aud

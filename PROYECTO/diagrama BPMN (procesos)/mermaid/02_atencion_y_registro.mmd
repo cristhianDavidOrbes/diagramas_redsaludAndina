@@ -1,0 +1,31 @@
+flowchart LR
+  subgraph agg_RedSalud___Equipo_cl_nico["RedSalud · Equipo clínico<br/><i>Carril</i>"]
+    sub02_inicio(("Historial auditado listo<br/><i>Evento de Inicio</i>"))
+    sub02_admitir["Admitir y verificar<br/><i>Tarea</i>"]
+    sub02_teleconsulta["Ejecutar teleconsulta<br/><i>Tarea</i>"]
+    sub02_video_ok{"¿Sesión efectiva?<br/><i>Compuerta Exclusiva</i>"}
+    sub02_evolucion["Redactar nota clínica<br/><i>Tarea</i>"]
+    sub02_adjuntos["Validar adjuntos<br/><i>Tarea</i>"]
+    sub02_auditar["Auditar cierre clínico<br/><i>Tarea</i>"]
+    sub02_fin(("Episodio consolidado<br/><i>Evento de Fin</i>"))
+  end
+  subgraph agg_RedSalud___Registro_y_sincronizaci_n["RedSalud · Registro y sincronización<br/><i>Carril</i>"]
+    sub02_incidencia["Documentar incidencia<br/><i>Tarea</i>"]
+    sub02_fin_inconclusa(("Sesión inconclusa<br/><i>Evento de Fin</i>"))
+    sub02_lww["Resolver cambios LWW<br/><i>Tarea</i>"]
+    sub02_bitacora_lww[("Bitácora LWW · auditoría<br/><i>Almacén de Datos</i>")]
+    sub02_confirmar["Confirmar guardado<br/><i>Tarea</i>"]
+    sub02_integro{"¿Guardado íntegro?<br/><i>Compuerta Exclusiva</i>"}
+    sub02_fin_fallo(("Registro incompleto<br/><i>Evento de Fin</i>"))
+  end
+  sub02_inicio --> sub02_admitir
+  sub02_admitir --> sub02_teleconsulta
+  sub02_teleconsulta --> sub02_video_ok
+  sub02_video_ok -->|"Sí, efectiva"| sub02_evolucion
+  sub02_evolucion --> sub02_adjuntos
+  sub02_auditar --> sub02_fin
+  sub02_incidencia --> sub02_fin_inconclusa
+  sub02_lww -->|"Auditar ambos valores"| sub02_bitacora_lww
+  sub02_lww --> sub02_confirmar
+  sub02_confirmar --> sub02_integro
+  sub02_integro -->|"No, fallo"| sub02_fin_fallo

@@ -1,0 +1,28 @@
+flowchart LR
+  subgraph Agregado_LoteSync["Agregado LoteSync<br/><i>Agregado</i>"]
+    od_root(("LoteSincronización<br/><i>Raíz de Agregado</i>"))
+    od_vo(("ClaveIdempotencia<br/><i>Objeto de Valor</i>"))
+    od_srv(("ResolutorConflictos<br/><i>Servicio de Dominio</i>"))
+  end
+  subgraph Salida_Transaccional_y_Auditor_a["Salida Transaccional y Auditoría<br/><i>Contexto Delimitado</i>"]
+    od_repo(("RepoOutboxAurora<br/><i>Repositorio</i>"))
+    od_reg(("Regla Asimetría<br/><i>Regla de Negocio</i>"))
+  end
+  od_act("App Móvil Offline<br/><i>Sistema Externo</i>")
+  od_cmd1(("SincronizarLote<br/><i>Comando</i>"))
+  od_ev1(("LoteAceptadoIdempotente<br/><i>Evento</i>"))
+  od_pol(("PolíticaConflicto<br/><i>Política</i>"))
+  od_cmd2(("ResolverConflictoLote<br/><i>Comando</i>"))
+  od_ev2(("ConflictoAuditado<br/><i>Evento</i>"))
+  od_sqs("SQS FIFO Ordenado<br/><i>Sistema Externo</i>")
+  od_act -->|"reintenta 3x"| od_cmd1
+  od_cmd1 -->|"persiste único"| od_ev1
+  od_cmd1 -->|"valida"| od_root
+  od_ev1 -->|"evalúa"| od_pol
+  od_pol -->|"dispara"| od_cmd2
+  od_cmd2 -->|"emite"| od_ev2
+  od_cmd2 -->|"publica outbox"| od_repo
+  od_root -->|"verifica UNIQUE"| od_vo
+  od_root -->|"resuelve"| od_srv
+  od_repo -->|"cumple"| od_reg
+  od_repo -->|"MessageGroupId"| od_sqs

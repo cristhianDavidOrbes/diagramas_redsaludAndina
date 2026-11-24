@@ -1,0 +1,35 @@
+sequenceDiagram
+    autonumber
+    participant E as Especialista
+    participant API as GET /historial/{id}
+    participant ABAC as Autorizador ABAC
+    participant RM as Cache L1 Caffeine + L2 ElastiCache
+    participant ACL as Adaptador SOAP (Resilience4j)
+    participant LEG as Legado SOAP Nocturno + BD RO
+    participant AUD as Auditoría S3 Object Lock
+
+    E->>API: GET /historial/{pacienteId}?motivo=teleconsulta
+    API->>ABAC: ¿Rol clínico + centro + relación?
+    ABAC-->>API: Permitido
+    API->>RM: Buscar read model canónico (TTL vigente)
+    alt Cache Hit (p95 <= 2 s)
+        RM-->>API: HistorialCanónico + fechaSincronizacion
+        API->>AUD: Registrar lectura clínica (usuario, fecha, recurso, motivo)
+        API-->>E: 200 OK + X-Data-Freshness: fresh
+    else Cache Miss / TTL expirado (<= 6 s)
+        API->>ACL: HistorialClinicoPort.consultar(pacienteId)
+        ACL->>LEG: WebServiceTemplate (timeout + CircuitBreaker)
+        alt Legado responde en ventana autorizada
+            LEG-->>ACL: Respuesta XML/SOAP legado
+            ACL->>ACL: Traducir a modelo canónico (sin filtrar DTO SOAP)
+            ACL-->>API: HistorialCanónico actualizado
+            API->>RM: Actualizar caché L1/L2 con TTL explícito
+            API->>AUD: Registrar lectura clínica
+            API-->>E: 200 OK + X-Data-Freshness: live
+        else Ejercicio detonante: Mock SOAP apagado / timeout
+            LEG--xACL: Error / Timeout
+            ACL-->>API: CircuitBreaker OPEN -> fallback read model
+            API->>AUD: Registrar lectura degradada
+            API-->>E: 200 OK (nunca 500) + X-Data-Freshness: stale
+        end
+    end

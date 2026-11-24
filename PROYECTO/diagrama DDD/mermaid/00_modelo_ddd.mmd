@@ -1,0 +1,122 @@
+flowchart LR
+  subgraph Core___Atenci_n_Telecl_nica["Core · Atención Teleclínica<br/><i>Subdominio</i>"]
+  end
+  subgraph Interconsulta["Interconsulta<br/><i>Contexto Delimitado</i>"]
+    c_inter_ohs(("OHS Interconsulta API<br/><i>Servicio de Host Abierto (OHS)</i>"))
+  end
+  subgraph Agregado_Interconsulta["Agregado Interconsulta<br/><i>Agregado</i>"]
+    c_inter_root(("Interconsulta<br/><i>Raíz de Agregado</i>"))
+    c_inter_vo(("EstadoDerivación<br/><i>Objeto de Valor</i>"))
+    c_inter_repo(("RepoInterconsultas<br/><i>Repositorio</i>"))
+  end
+  subgraph Agenda["Agenda<br/><i>Contexto Delimitado</i>"]
+    c_ag_ohs(("OHS Agenda API<br/><i>Servicio de Host Abierto (OHS)</i>"))
+  end
+  subgraph Agregado_CupoCita["Agregado CupoCita<br/><i>Agregado</i>"]
+    c_ag_root(("CupoEspecialista<br/><i>Raíz de Agregado</i>"))
+    c_ag_ent(("CitaTelemedicina<br/><i>Entidad</i>"))
+    c_ag_repo(("RepoCuposOptimista<br/><i>Repositorio</i>"))
+  end
+  subgraph Episodio_Cl_nico["Episodio Clínico<br/><i>Contexto Delimitado</i>"]
+    c_ep_ohs(("OHS Episodio API<br/><i>Servicio de Host Abierto (OHS)</i>"))
+  end
+  subgraph Agregado_Episodio["Agregado Episodio<br/><i>Agregado</i>"]
+    c_ep_root(("EpisodioClínico<br/><i>Raíz de Agregado</i>"))
+    c_ep_ent(("AdjuntoCifradoS3<br/><i>Entidad</i>"))
+    c_ep_repo(("RepoEpisodios<br/><i>Repositorio</i>"))
+  end
+  subgraph Receta_Electr_nica["Receta Electrónica<br/><i>Contexto Delimitado</i>"]
+    c_rec_pl["PL Contrato SQS<br/><i>Lenguaje Publicado (PL)</i>"]
+  end
+  subgraph Agregado_Receta["Agregado Receta<br/><i>Agregado</i>"]
+    c_rec_root(("RecetaMédica<br/><i>Raíz de Agregado</i>"))
+    c_rec_vo(("FirmaKMS<br/><i>Objeto de Valor</i>"))
+    c_rec_repo(("RepoRecetaOutbox<br/><i>Repositorio</i>"))
+  end
+  subgraph Soporte___Sync_y_Anal_tica["Soporte · Sync y Analítica<br/><i>Subdominio</i>"]
+  end
+  subgraph Sincronizaci_n_Offline["Sincronización Offline<br/><i>Contexto Delimitado</i>"]
+    s_sy_reg(("Regla LWW y Rechazo<br/><i>Regla de Negocio</i>"))
+  end
+  subgraph Agregado_LoteSync["Agregado LoteSync<br/><i>Agregado</i>"]
+    s_sy_root(("LoteSincronización<br/><i>Raíz de Agregado</i>"))
+    s_sy_vo(("ClaveIdempotencia<br/><i>Objeto de Valor</i>"))
+    s_sy_srv(("ResolutorConflictos<br/><i>Servicio de Dominio</i>"))
+  end
+  subgraph Anal_tica_de_Uso["Analítica de Uso<br/><i>Contexto Delimitado</i>"]
+    s_an_vista(("Vista SLO 99.5%<br/><i>Vista</i>"))
+  end
+  subgraph Agregado_M_tricaUso["Agregado MétricaUso<br/><i>Agregado</i>"]
+    s_an_root(("TableroAdopción<br/><i>Raíz de Agregado</i>"))
+  end
+  subgraph Gen_rico___Acceso__Legado_y_Aud_["Genérico · Acceso, Legado y Aud.<br/><i>Subdominio</i>"]
+  end
+  subgraph Identidad_y_Acceso["Identidad y Acceso<br/><i>Contexto Delimitado</i>"]
+    g_id_acl["ACL OIDC / OAuth2<br/><i>Capa Anticorrupción (ACL)</i>"]
+  end
+  subgraph Agregado_Sesi_nABAC["Agregado SesiónABAC<br/><i>Agregado</i>"]
+    g_id_root(("PrincipalClínico<br/><i>Raíz de Agregado</i>"))
+    g_id_srv(("AutorizadorABAC<br/><i>Servicio de Dominio</i>"))
+  end
+  subgraph Integraci_n_Legado["Integración Legado<br/><i>Contexto Delimitado</i>"]
+    g_leg_acl["ACL SOAP Nocturno<br/><i>Capa Anticorrupción (ACL)</i>"]
+  end
+  subgraph Agregado_HistorialVista["Agregado HistorialVista<br/><i>Agregado</i>"]
+    g_leg_root(("HistorialCanónico<br/><i>Raíz de Agregado</i>"))
+    g_leg_repo(("CacheTwoLevelRepo<br/><i>Repositorio</i>"))
+  end
+  subgraph Auditor_a["Auditoría<br/><i>Contexto Delimitado</i>"]
+    g_au_reg(("Object Lock WORM<br/><i>Regla de Negocio</i>"))
+  end
+  subgraph Agregado_TrazaAcceso["Agregado TrazaAcceso<br/><i>Agregado</i>"]
+    g_au_root(("TrazaAccesoClínico<br/><i>Raíz de Agregado</i>"))
+    g_au_repo(("S3ObjectLockRepo<br/><i>Repositorio</i>"))
+  end
+  ext_med_rural("Médico Rural<br/><i>Actor</i>")
+  ext_especialista("Especialista<br/><i>Actor</i>")
+  ext_farmacia_kms("Farmacia y AWS KMS<br/><i>Sistema Externo</i>")
+  ext_app_offline("App Móvil Offline<br/><i>Sistema Externo</i>")
+  cm_sync_bridge["C/P Clínica-Sync<br/><i>Cliente/Proveedor</i>"]
+  ext_webrtc("Video WebRTC<br/><i>Sistema Externo</i>")
+  ext_oidc("Proveedor OIDC<br/><i>Sistema Externo</i>")
+  ext_soap("Legado SOAP + BD RO<br/><i>Sistema Externo</i>")
+  ext_auditor("Auditor Clínico<br/><i>Actor</i>")
+  c_inter_root -->|"valida"| c_inter_vo
+  c_inter_root -->|"persiste"| c_inter_repo
+  c_inter_root -->|"publica en"| c_inter_ohs
+  c_ag_root -->|"asigna"| c_ag_ent
+  c_ag_root -->|"persiste @Version"| c_ag_repo
+  c_ag_root -->|"expone"| c_ag_ohs
+  c_inter_ohs -->|"reserva cupo"| c_ag_root
+  c_ag_repo -->|"inicia atención"| c_ep_root
+  c_ep_root -->|"adjunta KMS"| c_ep_ent
+  c_ep_root -->|"persiste"| c_ep_repo
+  c_ep_root -->|"expone"| c_ep_ohs
+  c_ep_root -->|"origina receta"| c_rec_root
+  c_rec_root -->|"sella firma"| c_rec_vo
+  c_rec_root -->|"guarda tx outbox"| c_rec_repo
+  c_rec_root -->|"publica SQS"| c_rec_pl
+  s_sy_root -->|"deduplica ULID"| s_sy_vo
+  s_sy_root -->|"resuelve"| s_sy_srv
+  s_sy_root -->|"aplica política"| s_sy_reg
+  s_an_root -->|"proyecta KPI"| s_an_vista
+  s_sy_reg -->|"emite métricas"| s_an_root
+  g_id_root -->|"evalúa ABAC"| g_id_srv
+  g_id_root -->|"mapea claims"| g_id_acl
+  g_leg_root -->|"cachea TTL"| g_leg_repo
+  g_leg_root -->|"traduce SOAP"| g_leg_acl
+  g_au_root -->|"graba WORM"| g_au_repo
+  g_au_root -->|"exige motivo"| g_au_reg
+  ext_med_rural -->|"solicita"| c_inter_root
+  ext_app_offline -->|"envía lote ULID"| s_sy_root
+  c_rec_pl -->|"firma KMS + SQS"| ext_farmacia_kms
+  ext_especialista -->|"atiende agenda"| c_ag_root
+  ext_webrtc -->|"transmite video"| c_ep_ohs
+  s_sy_reg -->|"envía lote"| cm_sync_bridge
+  cm_sync_bridge -->|"sincroniza campos"| c_ep_repo
+  c_ag_ohs -->|"autoriza ABAC"| g_id_srv
+  c_ep_ohs -->|"lee historial RO"| g_leg_root
+  s_an_vista -->|"audita LWW y SLO"| g_au_root
+  ext_oidc -->|"emite JWT"| g_id_acl
+  ext_soap -->|"responde XML/RO"| g_leg_acl
+  g_au_reg -->|"reporta trazas"| ext_auditor

@@ -1,0 +1,25 @@
+flowchart LR
+  subgraph agg_RedSalud_Andina___L_mite_de_Sistema["RedSalud Andina - Límite de Sistema<br/><i>Límite de Sistema</i>"]
+    web("Cliente web<br/><i>Contenedor</i>")
+    backend("Monolito modular · Colombia<br/><i>Contenedor</i>")
+    db[("PostgreSQL<br/><i>Base de Datos</i>")]
+  end
+  old("Legado clínico on-premise<br/><i>Sistema Externo</i>")
+  video("Video WebRTC gestionado<br/><i>Sistema Externo</i>")
+  pharmacy("Firma y farmacia del centro<br/><i>Sistema Externo</i>")
+  idp("Proveedor de identidad<br/><i>Sistema Externo</i>")
+  pacientes("Pacientes<br/><i>Persona</i>")
+  medicos_rurales("Médicos rurales<br/><i>Persona</i>")
+  especialistas("Especialistas<br/><i>Persona</i>")
+  gestor_y_auditor("Gestor y auditor<br/><i>Persona</i>")
+  backend -->|"SOAP nocturno / solo lectura"| old
+  backend -->|"OIDC"| idp
+  backend -->|"Firma y entrega"| pharmacy
+  backend -->|"Sesiones"| video
+  web -->|"Audio/video [WebRTC]"| video
+  pacientes -->|"Recibir atención"| web
+  medicos_rurales -->|"Registrar y agendar"| web
+  especialistas -->|"Atender y emitir recetas"| web
+  gestor_y_auditor -->|"Revisar gestión y evidencia"| web
+  web -->|"TLS / reintento idempotente"| backend
+  backend -->|"Datos privados [SQL/TLS]"| db

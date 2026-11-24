@@ -1,0 +1,28 @@
+flowchart LR
+  subgraph agg_PostgreSQL___modelo_l_gico_de_RedSalud["PostgreSQL - modelo lógico de RedSalud<br/><i>Esquema</i>"]
+    db_centro(("Centro de atención<br/><i>Entidad Fuerte</i>"))
+    db_usuario(("Usuario<br/><i>Entidad Fuerte</i>"))
+    db_paciente(("Paciente<br/><i>Entidad Fuerte</i>"))
+    db_cupo(("Cupo de especialista<br/><i>Entidad Fuerte</i>"))
+    db_interconsulta(("Interconsulta<br/><i>Entidad Fuerte</i>"))
+    db_cita(("Cita<br/><i>Entidad Fuerte</i>"))
+    db_episodio(("Episodio clínico<br/><i>Entidad Fuerte</i>"))
+    db_adjunto(("Adjunto clínico<br/><i>Entidad Fuerte</i>"))
+    db_receta(("Receta electrónica<br/><i>Entidad Fuerte</i>"))
+    db_historial(("Historial del legado<br/><i>Entidad Fuerte</i>"))
+    db_auditoria(("Acceso clínico auditado<br/><i>Entidad Fuerte</i>"))
+    db_operacion(("Operación de sincronización<br/><i>Entidad Fuerte</i>"))
+  end
+  db_usuario -->|"Especialista publica (0,N)"| db_cupo
+  db_usuario -->|"Médico solicita (0,N)"| db_interconsulta
+  db_paciente -->|"Recibe solicitudes (0,N)"| db_interconsulta
+  db_centro -->|"Origina (0,N)"| db_interconsulta
+  db_interconsulta -->|"Historial de reservas (0,N)"| db_cita
+  db_cupo -->|"Reservas históricas (0,N)"| db_cita
+  db_cita -->|"Genera atención (0,1)"| db_episodio
+  db_episodio -->|"Tiene documentos (0,N)"| db_adjunto
+  db_episodio -->|"Genera recetas (0,N)"| db_receta
+  db_usuario -->|"Especialista prescribe (0,N)"| db_receta
+  db_paciente -->|"Tiene antecedentes (0,N)"| db_historial
+  db_usuario -->|"Deja evidencia (0,N)"| db_auditoria
+  db_usuario -->|"Envía operaciones (0,N)"| db_operacion

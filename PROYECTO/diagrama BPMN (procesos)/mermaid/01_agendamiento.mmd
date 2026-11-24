@@ -1,0 +1,31 @@
+flowchart LR
+  subgraph agg_RedSalud___Centro_rural["RedSalud · Centro rural<br/><i>Carril</i>"]
+    sub01_inicio(("Solicitud autorizada<br/><i>Evento de Inicio</i>"))
+    sub01_registrar["Registrar datos e idemp.<br/><i>Tarea</i>"]
+    sub01_rechazar_clave["Rechazar colisión<br/><i>Tarea</i>"]
+    sub01_fin_clave(("Clave en conflicto<br/><i>Evento de Fin</i>"))
+  end
+  subgraph agg_RedSalud___Agenda["RedSalud · Agenda<br/><i>Carril</i>"]
+    sub01_agenda["Consultar agenda vigente<br/><i>Tarea</i>"]
+    sub01_idempotencia["Verificar clave idempot.<br/><i>Tarea</i>"]
+    sub01_clave_ok{"¿Clave válida?<br/><i>Compuerta Exclusiva</i>"}
+    sub01_reservar["Reservar cupo atómico<br/><i>Tarea</i>"]
+    sub01_bitacora[("Claves y bloqueos · BD<br/><i>Almacén de Datos</i>")]
+    sub01_cupo_ok{"¿Cupo bloqueado?<br/><i>Compuerta Exclusiva</i>"}
+    sub01_no_liberar["Preservar otros cupos<br/><i>Tarea</i>"]
+    sub01_fin_ocupado(("Sin cupo reservado<br/><i>Evento de Fin</i>"))
+  end
+  subgraph agg_RedSalud___Auditor_a["RedSalud · Auditoría<br/><i>Carril</i>"]
+    sub01_evidencia["Auditar reserva válida<br/><i>Tarea</i>"]
+    sub01_fin_ok(("Reserva consolidada<br/><i>Evento de Fin</i>"))
+  end
+  sub01_inicio --> sub01_registrar
+  sub01_rechazar_clave --> sub01_fin_clave
+  sub01_agenda --> sub01_idempotencia
+  sub01_idempotencia --> sub01_clave_ok
+  sub01_clave_ok -->|"Sí, válida"| sub01_reservar
+  sub01_reservar -->|"Guardar clave y cupo"| sub01_bitacora
+  sub01_reservar --> sub01_cupo_ok
+  sub01_cupo_ok -->|"No, ocupado"| sub01_no_liberar
+  sub01_no_liberar --> sub01_fin_ocupado
+  sub01_evidencia --> sub01_fin_ok

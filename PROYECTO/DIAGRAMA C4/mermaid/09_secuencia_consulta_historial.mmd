@@ -1,0 +1,31 @@
+sequenceDiagram
+  title Cada lectura del historial queda auditada antes de responder (RF-06, RF-08)
+  actor E as Especialista
+  participant W as Aplicación web
+  participant H as Historial clínico
+  participant I as Identidad y autorización
+  participant A as Adaptador del legado
+  participant R as Vista de lectura historial
+  participant L as Legado clínico
+  participant AU as Auditoría
+  E->>W: pide historial
+  W->>H: GET /api/v1/pacientes/{id}/historial?motivo=
+  H->>I: ¿permiso? (rol, centro, motivo)
+  alt sin permiso
+    I-->>H: denegado
+    I-)AU: AccesoDenegado
+    H-->>W: 403 Problem Details
+  else permitido
+    I-->>H: permitido
+    H->>A: obtenerHistorial(pacienteId)
+    A->>R: lee historial:{pacienteId}
+    R-->>A: datos + actualizadoEn
+    opt el dato no está en la vista
+      A->>L: lectura puntual por VPN (máx. 6 s)
+      L-->>A: datos
+    end
+    A-->>H: Historial
+    H-)AU: HistorialConsultado (outbox, misma transacción)
+    H-->>W: 200 + actualizadoEn
+    W-->>E: muestra historial con su fecha
+  end

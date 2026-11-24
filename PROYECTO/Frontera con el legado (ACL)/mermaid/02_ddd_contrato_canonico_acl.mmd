@@ -1,0 +1,28 @@
+flowchart LR
+  subgraph Agregado_HistorialVista["Agregado HistorialVista<br/><i>Agregado</i>"]
+    ad_root(("HistorialCanónico<br/><i>Raíz de Agregado</i>"))
+    ad_vo(("MarcaFrescura<br/><i>Objeto de Valor</i>"))
+    ad_repo(("CacheTwoLevelRepo<br/><i>Repositorio</i>"))
+  end
+  subgraph Frontera_Anticorrupci_n["Frontera Anticorrupción<br/><i>Contexto Delimitado</i>"]
+    ad_acl["ACL SOAP Nocturno<br/><i>Capa Anticorrupción (ACL)</i>"]
+    ad_reg(("Regla Legado Verdad<br/><i>Regla de Negocio</i>"))
+  end
+  ad_act("Especialista<br/><i>Actor</i>")
+  ad_cmd1(("ConsultarHistorial<br/><i>Comando</i>"))
+  ad_ev1(("HistorialCacheExpirado<br/><i>Evento</i>"))
+  ad_pol(("PolíticaFallbackACL<br/><i>Política</i>"))
+  ad_cmd2(("ConsultarLegadoSOAP<br/><i>Comando</i>"))
+  ad_ev2(("HistorialEntregado<br/><i>Evento</i>"))
+  ad_sys("Legado SOAP + BD RO<br/><i>Sistema Externo</i>")
+  ad_act -->|"solicita"| ad_cmd1
+  ad_cmd1 -->|"cache miss"| ad_ev1
+  ad_cmd1 -->|"lee proyección"| ad_root
+  ad_ev1 -->|"activa"| ad_pol
+  ad_pol -->|"dispara"| ad_cmd2
+  ad_cmd2 -->|"degrada o refresca"| ad_ev2
+  ad_cmd2 -->|"invoca puerto"| ad_acl
+  ad_root -->|"expone TTL"| ad_vo
+  ad_root -->|"persiste L1/L2"| ad_repo
+  ad_acl -->|"aplica"| ad_reg
+  ad_acl -->|"SOAP / BD RO"| ad_sys

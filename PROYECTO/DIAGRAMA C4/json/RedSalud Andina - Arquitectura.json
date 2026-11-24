@@ -3,11 +3,11 @@
   "proyecto": {
     "nombre_proyecto": "RedSalud Andina - Arquitectura",
     "version": "3.0.0",
-    "notation": "uml",
+    "notation": "c4",
     "fecha_analisis": "2026-10-31",
     "read_models": [],
     "responsables": [],
-    "notas": "Un monolito desplegable; límites de módulo lógicos, llamadas internas, datos por esquema.\n\n<!-- ambigüedades registradas por el agente -->\n## Pendiente en la fuente\n- ¿Por qué canal se envían las recetas a la farmacia del centro (servicio web, correo o sistema propio)? — afecta: Contrato de Firma y farmacia y ADR-008\n- ¿Qué país y región de AWS cumplen la residencia de datos? — afecta: ADR-004 y ADR-006\n- ¿Qué proveedor de identidad OIDC se usa (por ejemplo, Amazon Cognito)? — afecta: Integración con Proveedor de identidad\n- ¿Qué proveedor de video se usa y procesa audio y video dentro del país? — afecta: ADR-005\n- ¿Cuál es el tiempo límite por estado para alertar una interconsulta pendiente? — afecta: Evento InterconsultaPendiente\n- ¿La base de solo lectura del legado responde fuera del horario de oficina? — afecta: ADR-002 y consulta puntual del Adaptador del legado\n- ¿Qué lenguaje y framework se usan en el backend y en la aplicación web? — afecta: Metadatos repo y puerto de todos los componentes",
+    "notas": "Un monolito modular desplegable en Java 21 + Spring Boot 3.x (frontend React/PWA); límites de módulo físicos y verificables con ArchUnit/Spring Modulith, comunicación por eventos y propiedad de datos por esquema.\n\n## Decisiones cerradas del curso\n- Residencia única en una sola región AWS (sin réplicas ni backups cross-region).\n- Persistencia: Aurora PostgreSQL Multi-AZ para el dominio clínico transaccional; DynamoDB solo para perfiles de identidad y caché/read model del legado (junto con Caffeine/ElastiCache).\n- Identidad: Amazon Cognito (OIDC/OAuth2) + autorización ABAC en capa de servicio (@PreAuthorize + AuthorizationManager).\n- Adjuntos y auditoría: S3 cifrado con KMS (claves por contexto y rotación) + S3 Object Lock (Compliance) append-only.\n- Farmacia y eventos: SQS FIFO ordenado por agregado vía Transactional Outbox.\n- Video: servicio gestionado WebRTC con residencia regional (latencia señalización <= 300 ms).\n- Legado: sin modificar (SOAP nocturno + BD solo lectura) detrás de ACL + read model CQRS (p95 <= 2 s caché / <= 6 s directo).\n",
     "transcript": "",
     "agregados": [
       {
@@ -6336,6 +6336,918 @@
         "notation": "c4",
         "mermaidCode": "sequenceDiagram\n  title La receta se guarda antes de enviarse y nunca se pierde (RF-05)\n  actor E as Especialista\n  participant W as Aplicación web\n  participant RE as Receta electrónica\n  participant I as Identidad y autorización\n  participant IND as Indicadores\n  participant F as Firma y farmacia\n  E->>W: firma la receta\n  W->>RE: POST /api/v1/episodios/{id}/recetas\n  RE->>I: ¿permiso?\n  I-->>RE: permitido\n  RE->>RE: guarda receta + outbox (misma transacción)\n  RE-)IND: RecetaEmitida\n  RE-->>W: 201 pendiente de envío\n  alt la farmacia responde\n    RE->>F: POST /farmacia/v1/recetas\n    F-->>RE: 202 recibida\n    RE->>RE: marca enviada\n  else no responde\n    RE->>RE: reintenta con espera creciente\n  end\n  Note over RE,F: Canal de la farmacia por acordar con la red (ADR-008)",
         "createdAt": "2026-11-05T16:13:50.744Z"
+      },
+      {
+        "id": "342fdd5b-6a19-5163-8f95-d5fa68607106",
+        "name": "02 · Vista Lógica (Hexagonal)",
+        "kind": "graph",
+        "notation": "c4",
+        "graph": {
+          "nombre_proyecto": "02 Logica hexagonal",
+          "version": "1.0.0",
+          "notation": "c4",
+          "fecha_analisis": "2026-11-24",
+          "read_models": [],
+          "responsables": [],
+          "notas": "",
+          "transcript": "",
+          "agregados": [],
+          "big_picture": {
+            "descripcion": "02 Logica hexagonal",
+            "hotspots": [],
+            "nodos": [
+              {
+                "id": "in",
+                "nombre": "Adaptadores de entrada",
+                "tipo_elemento": "Componente",
+                "descripcion": "REST, sincronización y tareas programadas invocan puertos de entrada. Autenticación antes del dominio.",
+                "x": 80,
+                "y": 70,
+                "width": 280,
+                "height": 140,
+                "estado_comparativo": "nuevo",
+                "metadata": [
+                  {
+                    "clave": "repo",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  },
+                  {
+                    "clave": "puerto",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  }
+                ],
+                "source": "Caso de uso del taller.pdf, pp. 1-2, RF-01/09; diseño",
+                "container": ""
+              },
+              {
+                "id": "ag",
+                "nombre": "Agenda e interconsulta",
+                "tipo_elemento": "Componente",
+                "descripcion": "Reserva transaccional de cupos; estados solicitada, agendada, atendida y cerrada. Evita doble reserva con restricción única.",
+                "x": 470,
+                "y": 70,
+                "width": 280,
+                "height": 140,
+                "estado_comparativo": "nuevo",
+                "metadata": [
+                  {
+                    "clave": "repo",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  },
+                  {
+                    "clave": "puerto",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  }
+                ],
+                "source": "Caso de uso del taller.pdf, p. 1, RF-02/07",
+                "container": ""
+              },
+              {
+                "id": "ep",
+                "nombre": "Episodio clínico",
+                "tipo_elemento": "Componente",
+                "descripcion": "Atención, adjuntos y asistencia; autoriza por rol y relación asistencial. Lecturas requieren evidencia durable.",
+                "x": 860,
+                "y": 70,
+                "width": 280,
+                "height": 140,
+                "estado_comparativo": "nuevo",
+                "metadata": [
+                  {
+                    "clave": "repo",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  },
+                  {
+                    "clave": "puerto",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  }
+                ],
+                "source": "Caso de uso del taller.pdf, p. 1, RF-03/04/06/08",
+                "container": ""
+              },
+              {
+                "id": "rx",
+                "nombre": "Receta y farmacia",
+                "tipo_elemento": "Componente",
+                "descripcion": "Emite y envía recetas con firma validada. Idempotencia por emisión; no se firma ni dispensa offline.",
+                "x": 80,
+                "y": 320,
+                "width": 280,
+                "height": 140,
+                "estado_comparativo": "nuevo",
+                "metadata": [
+                  {
+                    "clave": "repo",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  },
+                  {
+                    "clave": "puerto",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  }
+                ],
+                "source": "Caso de uso del taller.pdf, p. 1, RF-05; diseño",
+                "container": ""
+              },
+              {
+                "id": "seg",
+                "nombre": "Seguimiento e indicadores",
+                "tipo_elemento": "Componente",
+                "descripcion": "Pendientes, alertas y métricas agregadas, con consistencia eventual y sin datos clínicos en logs.",
+                "x": 470,
+                "y": 320,
+                "width": 280,
+                "height": 140,
+                "estado_comparativo": "nuevo",
+                "metadata": [
+                  {
+                    "clave": "repo",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  },
+                  {
+                    "clave": "puerto",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  }
+                ],
+                "source": "Caso de uso del taller.pdf, p. 1, RF-07/10",
+                "container": ""
+              },
+              {
+                "id": "sync",
+                "nombre": "Sincronización idempotente",
+                "tipo_elemento": "Componente",
+                "descripcion": "operationId único, registro de resultado y control de versión. Duplicados no duplican efectos; conflicto clínico requiere revisión.",
+                "x": 860,
+                "y": 320,
+                "width": 280,
+                "height": 140,
+                "estado_comparativo": "nuevo",
+                "metadata": [
+                  {
+                    "clave": "repo",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  },
+                  {
+                    "clave": "puerto",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  }
+                ],
+                "source": "Caso de uso del taller.pdf, p. 2, disponibilidad; diseño",
+                "container": ""
+              },
+              {
+                "id": "audit",
+                "nombre": "Autorización y auditoría",
+                "tipo_elemento": "Componente",
+                "descripcion": "Usuario, fecha, recurso, motivo y resultado. Persiste antes de devolver datos; falla cerrada si no puede registrar.",
+                "x": 80,
+                "y": 570,
+                "width": 280,
+                "height": 140,
+                "estado_comparativo": "nuevo",
+                "metadata": [
+                  {
+                    "clave": "repo",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  },
+                  {
+                    "clave": "puerto",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  }
+                ],
+                "source": "Caso de uso del taller.pdf, p. 1, RF-08; p. 2, seguridad",
+                "container": ""
+              },
+              {
+                "id": "ports",
+                "nombre": "Puertos de salida",
+                "tipo_elemento": "Componente",
+                "descripcion": "Contratos del dominio para repositorios, historia, video, firma y evidencia; sin dependencias AWS en dominio.",
+                "x": 470,
+                "y": 570,
+                "width": 280,
+                "height": 140,
+                "estado_comparativo": "nuevo",
+                "metadata": [
+                  {
+                    "clave": "repo",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  },
+                  {
+                    "clave": "puerto",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  }
+                ],
+                "source": "Caso de uso del taller.pdf, p. 2, mantenibilidad; diseño",
+                "container": ""
+              },
+              {
+                "id": "adap",
+                "nombre": "Adaptadores externos",
+                "tipo_elemento": "Componente",
+                "descripcion": "PostgreSQL y objetos; capa anticorrupción SOAP/BD; proveedor WebRTC, firma y farmacia. Todos dentro del mismo despliegue.",
+                "x": 860,
+                "y": 570,
+                "width": 280,
+                "height": 140,
+                "estado_comparativo": "nuevo",
+                "metadata": [
+                  {
+                    "clave": "repo",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  },
+                  {
+                    "clave": "puerto",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  }
+                ],
+                "source": "Caso de uso del taller.pdf, pp. 1-3; diseño",
+                "container": ""
+              }
+            ],
+            "aristas": [
+              {
+                "id": "e-0",
+                "fuente": "in",
+                "destino": "ag",
+                "descripcion": "Invoca casos de uso"
+              },
+              {
+                "id": "e-1",
+                "fuente": "in",
+                "destino": "ep",
+                "descripcion": "Invoca casos de uso"
+              },
+              {
+                "id": "e-2",
+                "fuente": "in",
+                "destino": "rx",
+                "descripcion": "Invoca casos de uso"
+              },
+              {
+                "id": "e-3",
+                "fuente": "in",
+                "destino": "sync",
+                "descripcion": "Recibe lote local"
+              },
+              {
+                "id": "e-4",
+                "fuente": "sync",
+                "destino": "ag",
+                "descripcion": "Valida cupos online"
+              },
+              {
+                "id": "e-5",
+                "fuente": "sync",
+                "destino": "ep",
+                "descripcion": "Aplica versión válida"
+              },
+              {
+                "id": "e-6",
+                "fuente": "ag",
+                "destino": "seg",
+                "descripcion": "Evento interno + outbox"
+              },
+              {
+                "id": "e-7",
+                "fuente": "ep",
+                "destino": "audit",
+                "descripcion": "Autoriza y registra"
+              },
+              {
+                "id": "e-8",
+                "fuente": "rx",
+                "destino": "audit",
+                "descripcion": "Autoriza y registra"
+              },
+              {
+                "id": "e-9",
+                "fuente": "ag",
+                "destino": "ports",
+                "descripcion": "Usa contratos"
+              },
+              {
+                "id": "e-10",
+                "fuente": "ep",
+                "destino": "ports",
+                "descripcion": "Usa contratos"
+              },
+              {
+                "id": "e-11",
+                "fuente": "rx",
+                "destino": "ports",
+                "descripcion": "Usa contratos"
+              },
+              {
+                "id": "e-12",
+                "fuente": "ports",
+                "destino": "adap",
+                "descripcion": "Implementa contratos"
+              }
+            ]
+          },
+          "politicas_inter_agregados": []
+        },
+        "createdAt": "2026-11-24T22:22:30.000Z"
+      },
+      {
+        "id": "d3acd6be-9666-571c-a122-496d954f8c31",
+        "name": "03 · Vista Física y Datos",
+        "kind": "graph",
+        "notation": "c4",
+        "graph": {
+          "nombre_proyecto": "03 Fisica y datos",
+          "version": "1.0.0",
+          "notation": "c4",
+          "fecha_analisis": "2026-11-24",
+          "read_models": [],
+          "responsables": [],
+          "notas": "",
+          "transcript": "",
+          "agregados": [],
+          "big_picture": {
+            "descripcion": "03 Fisica y datos",
+            "hotspots": [],
+            "nodos": [
+              {
+                "id": "pwa",
+                "nombre": "Cliente offline-first",
+                "tipo_elemento": "Contenedor",
+                "descripcion": "Borradores y cola local cifrada en equipo administrado; clave fuera del almacenamiento del navegador. Una PWA aislada no garantiza cifrado del dispositivo.",
+                "x": 80,
+                "y": 70,
+                "width": 280,
+                "height": 140,
+                "estado_comparativo": "nuevo",
+                "metadata": [
+                  {
+                    "clave": "repo",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  },
+                  {
+                    "clave": "puerto",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  }
+                ],
+                "source": "Caso de uso del taller.pdf, p. 1 RF-09; diseño",
+                "container": ""
+              },
+              {
+                "id": "mono",
+                "nombre": "Aplicación única",
+                "tipo_elemento": "Contenedor",
+                "descripcion": "Mismo binario para API y tareas internas. Outbox, reintentos y módulos; sin broker ni Redis al inicio.",
+                "x": 470,
+                "y": 70,
+                "width": 280,
+                "height": 140,
+                "estado_comparativo": "nuevo",
+                "metadata": [
+                  {
+                    "clave": "repo",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  },
+                  {
+                    "clave": "puerto",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  }
+                ],
+                "source": "Caso de uso del taller.pdf, pp. 2-3; diseño",
+                "container": ""
+              },
+              {
+                "id": "db",
+                "nombre": "PostgreSQL",
+                "tipo_elemento": "Base de Datos",
+                "descripcion": "Esquemas por módulo, transacciones, idempotencia, outbox y proyección clínica con fecha de última actualización.",
+                "x": 860,
+                "y": 70,
+                "width": 280,
+                "height": 140,
+                "estado_comparativo": "nuevo",
+                "metadata": [
+                  {
+                    "clave": "repo",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  },
+                  {
+                    "clave": "puerto",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  }
+                ],
+                "source": "Caso de uso del taller.pdf, pp. 1-2; diseño",
+                "container": ""
+              },
+              {
+                "id": "obj",
+                "nombre": "Objetos clínicos cifrados",
+                "tipo_elemento": "Sistema",
+                "descripcion": "Adjuntos privados y cargas reanudables. Enlaces cortos emitidos solo después de registrar auditoría.",
+                "x": 80,
+                "y": 320,
+                "width": 280,
+                "height": 140,
+                "estado_comparativo": "nuevo",
+                "metadata": [
+                  {
+                    "clave": "repo",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  },
+                  {
+                    "clave": "puerto",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  }
+                ],
+                "source": "Caso de uso del taller.pdf, p. 1 RF-04/08; diseño",
+                "container": ""
+              },
+              {
+                "id": "acl",
+                "nombre": "Adaptador anticorrupción",
+                "tipo_elemento": "Componente",
+                "descripcion": "Importación nocturna incremental desde SOAP. Lectura BD solo si su ventana y contrato lo permiten. No modifica legado.",
+                "x": 470,
+                "y": 320,
+                "width": 280,
+                "height": 140,
+                "estado_comparativo": "nuevo",
+                "metadata": [
+                  {
+                    "clave": "repo",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  },
+                  {
+                    "clave": "puerto",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  }
+                ],
+                "source": "Caso de uso del taller.pdf, p. 1 restricciones; p. 2 rendimiento",
+                "container": ""
+              },
+              {
+                "id": "old",
+                "nombre": "Legado on-premise",
+                "tipo_elemento": "Sistema Externo",
+                "descripcion": "Fuente histórica; indisponible fuera de su ventana. No se promete consulta en tiempo real 24 horas.",
+                "x": 860,
+                "y": 320,
+                "width": 280,
+                "height": 140,
+                "estado_comparativo": "nuevo",
+                "metadata": [
+                  {
+                    "clave": "repo",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  },
+                  {
+                    "clave": "puerto",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  }
+                ],
+                "source": "Caso de uso del taller.pdf, p. 1 situación actual",
+                "container": ""
+              },
+              {
+                "id": "video",
+                "nombre": "Proveedor WebRTC",
+                "tipo_elemento": "Sistema Externo",
+                "descripcion": "Medios y señalización nacionales; adaptable a 2 Mbps, audio prioritario y reprogramación tras corte.",
+                "x": 80,
+                "y": 570,
+                "width": 280,
+                "height": 140,
+                "estado_comparativo": "nuevo",
+                "metadata": [
+                  {
+                    "clave": "repo",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  },
+                  {
+                    "clave": "puerto",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  }
+                ],
+                "source": "Caso de uso del taller.pdf, pp. 1-2 RF-03",
+                "container": ""
+              },
+              {
+                "id": "evi",
+                "nombre": "Evidencia inmutable",
+                "tipo_elemento": "Sistema",
+                "descripcion": "Auditoría append-only y exportación con retención bloqueada, hash y verificación. Retención legal pendiente.",
+                "x": 470,
+                "y": 570,
+                "width": 280,
+                "height": 140,
+                "estado_comparativo": "nuevo",
+                "metadata": [
+                  {
+                    "clave": "repo",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  },
+                  {
+                    "clave": "puerto",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  }
+                ],
+                "source": "Caso de uso del taller.pdf, pp. 1-3 RF-08",
+                "container": ""
+              }
+            ],
+            "aristas": [
+              {
+                "id": "e-0",
+                "fuente": "pwa",
+                "destino": "mono",
+                "descripcion": "REST + operationId [TLS]"
+              },
+              {
+                "id": "e-1",
+                "fuente": "mono",
+                "destino": "db",
+                "descripcion": "Transacciones [SQL/TLS]"
+              },
+              {
+                "id": "e-2",
+                "fuente": "mono",
+                "destino": "obj",
+                "descripcion": "Objetos privados [TLS]"
+              },
+              {
+                "id": "e-3",
+                "fuente": "mono",
+                "destino": "acl",
+                "descripcion": "Puerto HistoriaClinica"
+              },
+              {
+                "id": "e-4",
+                "fuente": "acl",
+                "destino": "old",
+                "descripcion": "SOAP nocturno / BD RO"
+              },
+              {
+                "id": "e-5",
+                "fuente": "acl",
+                "destino": "db",
+                "descripcion": "Proyección de lectura"
+              },
+              {
+                "id": "e-6",
+                "fuente": "mono",
+                "destino": "video",
+                "descripcion": "Sesiones y asistencia"
+              },
+              {
+                "id": "e-7",
+                "fuente": "pwa",
+                "destino": "video",
+                "descripcion": "Medios [WebRTC]"
+              },
+              {
+                "id": "e-8",
+                "fuente": "mono",
+                "destino": "evi",
+                "descripcion": "Outbox durable [TLS]"
+              }
+            ]
+          },
+          "politicas_inter_agregados": []
+        },
+        "createdAt": "2026-11-24T22:22:30.000Z"
+      },
+      {
+        "id": "2e6dbd5d-7617-5d9c-9632-750b6a5a59a8",
+        "name": "04 · Vista de Despliegue",
+        "kind": "graph",
+        "notation": "c4",
+        "graph": {
+          "nombre_proyecto": "04 Despliegue condicionado",
+          "version": "1.0.0",
+          "notation": "c4",
+          "fecha_analisis": "2026-11-24",
+          "read_models": [],
+          "responsables": [],
+          "notas": "",
+          "transcript": "",
+          "agregados": [],
+          "big_picture": {
+            "descripcion": "04 Despliegue condicionado",
+            "hotspots": [],
+            "nodos": [
+              {
+                "id": "edge",
+                "nombre": "Centros y especialistas",
+                "tipo_elemento": "Sistema Externo",
+                "descripcion": "Equipos administrados; cola local durante cortes. No existe videollamada sin enlace.",
+                "estado_comparativo": "nuevo",
+                "tags_tecnologia": null,
+                "metadata": [
+                  {
+                    "clave": "repo",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  },
+                  {
+                    "clave": "puerto",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  }
+                ],
+                "x": 80,
+                "y": 70,
+                "width": 280,
+                "height": 140,
+                "source": "Caso de uso del taller.pdf, p. 1 RF-09; p. 2 disponibilidad",
+                "container": ""
+              },
+              {
+                "id": "lb",
+                "nombre": "Entrada HTTPS - ALB",
+                "tipo_elemento": "Sistema",
+                "descripcion": "Balanceador, certificados, políticas de acceso nacional y autorización en aplicación. No basta geolocalizar IP para garantizar residencia.",
+                "estado_comparativo": "nuevo",
+                "tags_tecnologia": null,
+                "metadata": [
+                  {
+                    "clave": "repo",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  },
+                  {
+                    "clave": "puerto",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  }
+                ],
+                "x": 470,
+                "y": 70,
+                "width": 280,
+                "height": 140,
+                "source": "Caso de uso del taller.pdf, p. 2 seguridad; diseño",
+                "container": ""
+              },
+              {
+                "id": "a",
+                "nombre": "Monolito AZ-A",
+                "tipo_elemento": "Contenedor",
+                "descripcion": "ECS Fargate, mínimo una tarea saludable. Misma imagen y módulos que AZ-B; API stateless.",
+                "estado_comparativo": "nuevo",
+                "tags_tecnologia": null,
+                "metadata": [
+                  {
+                    "clave": "repo",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  },
+                  {
+                    "clave": "puerto",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  }
+                ],
+                "x": 860,
+                "y": 70,
+                "width": 280,
+                "height": 140,
+                "source": "Caso de uso del taller.pdf, p. 2 disponibilidad; propuesta AWS",
+                "container": ""
+              },
+              {
+                "id": "b",
+                "nombre": "Monolito AZ-B",
+                "tipo_elemento": "Contenedor",
+                "descripcion": "Segunda tarea de la misma aplicación, no otro microservicio. Rolling deployment y health checks.",
+                "estado_comparativo": "nuevo",
+                "tags_tecnologia": null,
+                "metadata": [
+                  {
+                    "clave": "repo",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  },
+                  {
+                    "clave": "puerto",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  }
+                ],
+                "x": 80,
+                "y": 320,
+                "width": 280,
+                "height": 140,
+                "source": "Caso de uso del taller.pdf, p. 2 disponibilidad; propuesta AWS",
+                "container": ""
+              },
+              {
+                "id": "rds",
+                "nombre": "RDS PostgreSQL Multi-AZ",
+                "tipo_elemento": "Base de Datos",
+                "descripcion": "Primario y standby en la misma región nacional; backups y prueba de restauración. Sin réplica extranjera.",
+                "estado_comparativo": "nuevo",
+                "tags_tecnologia": null,
+                "metadata": [
+                  {
+                    "clave": "repo",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  },
+                  {
+                    "clave": "puerto",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  }
+                ],
+                "x": 470,
+                "y": 320,
+                "width": 280,
+                "height": 140,
+                "source": "Caso de uso del taller.pdf, p. 2 disponibilidad y residencia; propuesta",
+                "container": ""
+              },
+              {
+                "id": "s3",
+                "nombre": "S3 privado + Object Lock",
+                "tipo_elemento": "Sistema",
+                "descripcion": "Adjuntos y evidencia en buckets separados, cifrado KMS, retención y backups dentro del país.",
+                "estado_comparativo": "nuevo",
+                "tags_tecnologia": null,
+                "metadata": [
+                  {
+                    "clave": "repo",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  },
+                  {
+                    "clave": "puerto",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  }
+                ],
+                "x": 860,
+                "y": 320,
+                "width": 280,
+                "height": 140,
+                "source": "Caso de uso del taller.pdf, pp. 1-3 seguridad; propuesta",
+                "container": ""
+              },
+              {
+                "id": "ops",
+                "nombre": "Identidad, KMS y observabilidad",
+                "tipo_elemento": "Sistema",
+                "descripcion": "Cognito si cumple residencia; KMS, Secrets Manager y CloudWatch regionales sin PHI en logs. Infraestructura como código y rollback.",
+                "estado_comparativo": "nuevo",
+                "tags_tecnologia": null,
+                "metadata": [
+                  {
+                    "clave": "repo",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  },
+                  {
+                    "clave": "puerto",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  }
+                ],
+                "x": 80,
+                "y": 570,
+                "width": 280,
+                "height": 140,
+                "source": "Caso de uso del taller.pdf, p. 2 seguridad/mantenibilidad; propuesta",
+                "container": ""
+              },
+              {
+                "id": "onprem",
+                "nombre": "Legado y video nacionales",
+                "tipo_elemento": "Sistema Externo",
+                "descripcion": "Conexión privada al legado. Proveedor de medios nacional homologado. AWS solo si región y cada servicio cumplen residencia.",
+                "estado_comparativo": "nuevo",
+                "tags_tecnologia": null,
+                "metadata": [
+                  {
+                    "clave": "repo",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  },
+                  {
+                    "clave": "puerto",
+                    "valor": "pendiente",
+                    "tipo": "texto"
+                  }
+                ],
+                "x": 470,
+                "y": 570,
+                "width": 280,
+                "height": 140,
+                "source": "Caso de uso del taller.pdf, p. 1 restricciones; p. 3 decisiones",
+                "container": ""
+              }
+            ],
+            "aristas": [
+              {
+                "id": "e-0",
+                "fuente": "edge",
+                "destino": "lb",
+                "descripcion": "HTTPS"
+              },
+              {
+                "id": "e-1",
+                "fuente": "lb",
+                "destino": "a",
+                "descripcion": "Distribuye tráfico"
+              },
+              {
+                "id": "e-2",
+                "fuente": "lb",
+                "destino": "b",
+                "descripcion": "Distribuye tráfico"
+              },
+              {
+                "id": "e-3",
+                "fuente": "a",
+                "destino": "rds",
+                "descripcion": "SQL/TLS"
+              },
+              {
+                "id": "e-4",
+                "fuente": "b",
+                "destino": "rds",
+                "descripcion": "SQL/TLS"
+              },
+              {
+                "id": "e-5",
+                "fuente": "a",
+                "destino": "s3",
+                "descripcion": "Acceso privado"
+              },
+              {
+                "id": "e-6",
+                "fuente": "b",
+                "destino": "s3",
+                "descripcion": "Acceso privado"
+              },
+              {
+                "id": "e-7",
+                "fuente": "a",
+                "destino": "ops",
+                "descripcion": "Identidad y operación"
+              },
+              {
+                "id": "e-8",
+                "fuente": "b",
+                "destino": "ops",
+                "descripcion": "Identidad y operación"
+              },
+              {
+                "id": "e-9",
+                "fuente": "a",
+                "destino": "onprem",
+                "descripcion": "Integración privada"
+              },
+              {
+                "id": "e-10",
+                "fuente": "b",
+                "destino": "onprem",
+                "descripcion": "Integración privada"
+              }
+            ]
+          },
+          "politicas_inter_agregados": []
+        },
+        "createdAt": "2026-11-24T22:22:30.000Z"
       }
     ],
     "activeViewId": "d61c4a66-c6ac-4a4d-b3fc-65ce57cbb814",

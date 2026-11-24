@@ -11,7 +11,7 @@
       "Especialista",
       "Gestor de red"
     ],
-    "notas": "# Decisiones BPMN RedSalud Andina\nSe conserva un monolito modular por capas. Los contextos son dueños de datos de negocio; no son microservicios ni despliegues separados. Su colaboración interna no representa llamadas HTTP entre módulos.\nLos carriles con prefijo RedSalud son roles del mismo participante, representados como bandas planas por el formato de ProcessFlow. Paciente, Legado y Farmacia son pools externos de caja negra; sus enlaces discontinuos son mensajes, no secuencias.\nLa reserva sólo se comunica como confirmada después de su transacción; no se libera un cupo que nunca se reservó. La misma clave con contenido diferente se rechaza.\nSin red se capturan datos localmente, no se simula una videollamada ni se emite una receta firmada. Si no hubo teleconsulta efectiva, se mantiene pendiente para reprogramación.\nEl resultado de una entrega a farmacia puede ser entregada o pendiente: receta emitida y receta entregada son estados distintos.\nSOAP sólo se consulta en su ventana nocturna; la base del legado es de solo lectura en su ventana autorizada. Fuera de esas ventanas se informa la indisponibilidad, sin prometer SOAP diurno. El tratamiento de una necesidad clínica urgente depende del protocolo del centro, pendiente de definición.\nLos conflictos de campos independientes usan last-writer-wins con ambos valores auditados. Cupos y recetas firmadas se rechazan en el borde y requieren validación contra el servidor.\nCada lectura clínica exige permisos por rol, centro, especialidad y relación asistencial, motivo y evidencia durable antes de entregar los datos. Si no se puede guardar la auditoría, se bloquea la entrega.\nDatos clínicos, adjuntos, claves, evidencias y respaldos respetan el país y la región aprobados; no se añade replicación fuera de la residencia. El archivo de auditoría es inmutable con S3 Object Lock Compliance según el mapa regulatorio del usuario; cifrado TLS y KMS con claves por contexto y rotación.\nPendientes: valor del TTL, ventanas exactas de lectura, retención, tolerancia de reloj, intervalos de reintento y escalado; región y servicios compatibles con residencia. Ninguno se inventa como valor definitivo.\nOcho contextos de referencia del taller: Identidad y acceso, Agenda, Episodio clínico, Receta, Interconsulta, Integración legado, Auditoría, Analítica de uso. Sincronización es un módulo de soporte que conserva la operación y delega cada cambio al dueño de sus datos.\nSe crean cuatro vistas principales y cuatro detalles de invariantes/excepciones, enlazados mediante viewRef, además del proceso general. Los detalles evitan apretar todos los caminos en una sola lámina.\nCorrespondencia al dominio: cada tarea declara contexto, dato, comando y evento en la ficha. El contraste visual contra una vista DDD/Event Storming existente queda pendiente de revisión del equipo: este proyecto nuevo empezó con un pool vacío y no contiene esa vista.\nReglas de flujo consultadas: https://www.omg.org/bpmn/Samples/Elements/SequenceFlowRules.htm y https://www.omg.org/bpmn/Samples/Elements/MessageFlowRules.htm.\n\n<!-- ambigüedades registradas por el agente -->\nProceso general completo. Flechas continuas: secuencia; discontinuas con flecha: mensajes externos; discontinuas sin flecha: datos. Los almacenes son persistencia lógica de los módulos del mismo monolito. No son servicios separados. Sólo cinco vistas; los cuatro subprocesos se conservan enlazados. Los intervalos de reintento, TTL y ventanas exactas siguen pendientes de definición.",
+    "notas": "# Decisiones BPMN RedSalud Andina\nSe conserva un monolito modular por capas. Los contextos son dueños de datos de negocio; no son microservicios ni despliegues separados. Su colaboración interna no representa llamadas HTTP entre módulos.\nLos carriles con prefijo RedSalud son roles del mismo participante, representados como bandas planas por el formato de ProcessFlow. Paciente, Legado y Farmacia son pools externos de caja negra; sus enlaces discontinuos son mensajes, no secuencias.\nLa reserva sólo se comunica como confirmada después de su transacción; no se libera un cupo que nunca se reservó. La misma clave con contenido diferente se rechaza.\nSin red se capturan datos localmente, no se simula una videollamada ni se emite una receta firmada. Si no hubo teleconsulta efectiva, se mantiene pendiente para reprogramación.\nEl resultado de una entrega a farmacia puede ser entregada o pendiente: receta emitida y receta entregada son estados distintos.\nSOAP sólo se consulta en su ventana nocturna; la base del legado es de solo lectura en su ventana autorizada. Fuera de esas ventanas se informa la indisponibilidad, sin prometer SOAP diurno. El tratamiento de una necesidad clínica urgente depende del protocolo del centro, pendiente de definición.\nLos conflictos de campos independientes usan last-writer-wins con ambos valores auditados. Cupos y recetas firmadas se rechazan en el borde y requieren validación contra el servidor.\nCada lectura clínica exige permisos por rol, centro, especialidad y relación asistencial, motivo y evidencia durable antes de entregar los datos. Si no se puede guardar la auditoría, se bloquea la entrega.\nDatos clínicos, adjuntos, claves, evidencias y respaldos respetan el país y la región aprobados; no se añade replicación fuera de la residencia. El archivo de auditoría es inmutable con S3 Object Lock Compliance según el mapa regulatorio del usuario; cifrado TLS y KMS con claves por contexto y rotación.\nPendientes: valor del TTL, ventanas exactas de lectura, retención, tolerancia de reloj, intervalos de reintento y escalado; región y servicios compatibles con residencia. Ninguno se inventa como valor definitivo.\nOcho contextos de referencia del taller: Identidad y acceso, Agenda, Episodio clínico, Receta, Interconsulta, Integración legado, Auditoría, Analítica de uso. Sincronización es un módulo de soporte que conserva la operación y delega cada cambio al dueño de sus datos.\nSe crean cuatro vistas principales y cuatro detalles de invariantes/excepciones, enlazados mediante viewRef, además del proceso general. Los detalles evitan apretar todos los caminos en una sola lámina.\nCorrespondencia al dominio: cada tarea declara contexto, dato, comando y evento en la ficha. El contraste visual contra una vista DDD/Event Storming existente queda pendiente de revisión del equipo: este proyecto nuevo empezó con un pool vacío y no contiene esa vista.\nReglas de flujo consultadas: https://www.omg.org/bpmn/Samples/Elements/SequenceFlowRules.htm y https://www.omg.org/bpmn/Samples/Elements/MessageFlowRules.htm.\n\n<!-- ambigüedades registradas por el agente -->\nProceso general completo. Flechas continuas: secuencia; discontinuas con flecha: mensajes externos; discontinuas sin flecha: datos. Los almacenes son persistencia lógica de los módulos del mismo monolito. No son servicios separados. Sólo cinco vistas; los cuatro subprocesos se conservan enlazados. Los intervalos de reintento, TTL y ventanas exactas siguen pendientes de definición.\n\n## Mecánica de trabajo (Taller BPMN · 120 min)\n- Roles rotativos por bloque: Modelador (lienzo), Escéptico (caminos de fallo/excepción) y Escriba (fichas y acta).\n- Bloques 1–8 completados con 39/39 tareas documentadas con Contexto dueño, Dato, Evento y Camino de excepción (0 tareas huérfanas).\n\n## Coherencia 1:1 BPMN <-> DDD (Bloque 7)\n- Subproceso 01 · Agendamiento <-> DDD 01 · Agenda e Interconsulta (SolicitarInterconsulta, InterconsultaSolicitada, PolíticaReservaCupo, ReservarCupo, CupoReservado).\n- Subproceso 02 · Atención y registro <-> DDD 02 · Episodio y Sync Offline + Proyecto Offline-first e Idempotencia (SincronizarLote, LoteAceptadoIdempotente, PolíticaConflicto, ResolverConflictoLote, ConflictoAuditado).\n- Subproceso 03 · Prescripción <-> DDD 03 · Receta, KMS y Outbox (EmitirReceta, FirmaKMS, RepoRecetaOutbox, PL Contrato SQS).\n- Subproceso 04 · Consulta del historial <-> DDD 04 · ACL Legado y Auditoría + Proyectos ACL Legado y Seguridad/Auditoría (ConsultarHistorial, PolíticaFallbackACL, SolicitarLecturaClínica, AccesoClinicoDenegado, ArchivarTrazaWORM).\n\n## Acta de divergencias y parámetros cerrados (Bloque 8)\n- Divergencia 1: Sincronización offline se separa explícitamente como módulo de soporte en DDD/Spring Boot, delegando cambios a Episodio/Agenda por eventos.\n- Divergencia 2: Auditoría se modela como compuerta dura (si falla el registro de auditoría, se bloquea la entrega de datos clínicos).\n- Divergencia 3: Receta emitida (consistencia fuerte local + outbox) y Receta entregada a farmacia (eventual vía SQS FIFO) son estados diferenciados.\n- Parámetros operativos adoptados: TTL L1 Caffeine 15 min / L2 ElastiCache configurable con cabecera X-Data-Freshness; timeout SOAP 5 s (fallback <= 6 s); sync objetivo <= 15 min; retención S3 Object Lock Compliance 5 años.\n",
     "transcript": "",
     "defaultRouting": "orthogonal",
     "agregados": [
@@ -52,7 +52,7 @@
             "id": "general-v2-pedir-cita",
             "nombre": "Solicitar cita",
             "tipo_elemento": "Tarea",
-            "descripcion": "Entrega la solicitud con los datos del paciente y su centro de atención.",
+            "descripcion": "Entrega la solicitud con los datos del paciente y su centro de atención.\nContexto dueño: Interconsulta. Dato: SolicitudCita(pacienteId, centroRuralId, especialidad). Evento: SolicitudCitaEnviada. Excepción: Datos incompletos -> Solicitud rechazada.",
             "fuente": "Taller-BPMN.md:46",
             "metadata": [
               {
@@ -63,7 +63,7 @@
             ],
             "spec": {
               "featureName": "Solicitar cita",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Entrega la solicitud con los datos del paciente y su centro de atención.",
               "stories": [
                 {
@@ -137,7 +137,7 @@
             ],
             "spec": {
               "featureName": "Recibir respuesta de cita",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Espera la confirmación o la propuesta de otra fecha; una solicitud por sí sola no confirma la cita.",
               "stories": [
                 {
@@ -256,7 +256,7 @@
             ],
             "spec": {
               "featureName": "Respuesta recibida",
-              "status": "borrador",
+              "status": "revisado",
               "input": "El paciente conoce el resultado de su solicitud.",
               "stories": [
                 {
@@ -384,7 +384,7 @@
             "id": "general-v2-consulta-externa",
             "nombre": "Leer fuente autorizada",
             "tipo_elemento": "Tarea",
-            "descripcion": "Atiende una consulta de sólo lectura en la ventana permitida; devuelve datos o indisponibilidad, sin modificar el legado.",
+            "descripcion": "Atiende una consulta de sólo lectura en la ventana permitida; devuelve datos o indisponibilidad, sin modificar el legado.\nContexto dueño: Integración legado. Dato: AntecedentesLegado(pacienteId, origen, fecha). Evento: LecturaLegadoRespondida. Excepción: ¿Lectura disponible? = No -> Informar indisponibilidad.",
             "fuente": "Taller-BPMN.md:46",
             "metadata": [
               {
@@ -395,7 +395,7 @@
             ],
             "spec": {
               "featureName": "Leer fuente autorizada",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Atiende una consulta de sólo lectura en la ventana permitida; devuelve datos o indisponibilidad, sin modificar el legado.",
               "stories": [
                 {
@@ -469,7 +469,7 @@
             ],
             "spec": {
               "featureName": "¿Lectura disponible?",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Distingue datos disponibles de una ventana cerrada, error o ausencia de antecedentes.",
               "stories": [
                 {
@@ -558,7 +558,7 @@
             ],
             "spec": {
               "featureName": "Devolver antecedentes",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Responde los datos y su procedencia a RedSalud.",
               "stories": [
                 {
@@ -632,7 +632,7 @@
             ],
             "spec": {
               "featureName": "Informar indisponibilidad",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Responde explícitamente el error o la falta de acceso, sin inventar datos.",
               "stories": [
                 {
@@ -781,7 +781,7 @@
             "id": "general-v2-recibir-receta",
             "nombre": "Recibir receta firmada",
             "tipo_elemento": "Tarea",
-            "descripcion": "Verifica la receta y guarda la recepción idempotente antes de confirmar.",
+            "descripcion": "Verifica la receta y guarda la recepción idempotente antes de confirmar.\nContexto dueño: Receta. Dato: AcuseFarmacia(recetaId, hashFirma, estado). Evento: RecepcionFarmaciaProcesada. Excepción: ¿Recepción guardada? = No -> Informar error de recepción.",
             "fuente": "Taller-BPMN.md:46",
             "metadata": [
               {
@@ -792,7 +792,7 @@
             ],
             "spec": {
               "featureName": "Recibir receta firmada",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Verifica la receta y guarda la recepción idempotente antes de confirmar.",
               "stories": [
                 {
@@ -866,7 +866,7 @@
             ],
             "spec": {
               "featureName": "¿Recepción guardada?",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Confirma sólo cuando farmacia conserva la recepción.",
               "stories": [
                 {
@@ -955,7 +955,7 @@
             ],
             "spec": {
               "featureName": "Confirmar recepción",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Devuelve un acuse de recepción confirmado para cerrar el envío.",
               "stories": [
                 {
@@ -1029,7 +1029,7 @@
             ],
             "spec": {
               "featureName": "Informar error de recepción",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Devuelve un error; RedSalud mantiene el envío para reintento.",
               "stories": [
                 {
@@ -1229,7 +1229,7 @@
             ],
             "spec": {
               "featureName": "Solicitud recibida",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Representa el estado «Solicitud recibida» y conserva la correlación con la solicitud o atención en curso.",
               "stories": [
                 {
@@ -1292,7 +1292,7 @@
             "id": "general-v2-validar",
             "nombre": "Validar al paciente",
             "tipo_elemento": "Tarea",
-            "descripcion": "Comprueba la identidad, el centro y la relación asistencial antes de aceptar la solicitud. La validación fallida no genera una reserva.",
+            "descripcion": "Comprueba la identidad, el centro y la relación asistencial antes de aceptar la solicitud. La validación fallida no genera una reserva.\nContexto dueño: Identidad y acceso. Dato: PrincipalClinico + relacionAsistencial. Evento: PacienteValidado. Excepción: ¿Datos válidos? = No -> Solicitud rechazada.",
             "fuente": "Taller-BPMN.md:82",
             "metadata": [
               {
@@ -1323,7 +1323,7 @@
             ],
             "spec": {
               "featureName": "Validar al paciente",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Comprueba la identidad, el centro y la relación asistencial antes de aceptar la solicitud. La validación fallida no genera una reserva.",
               "stories": [
                 {
@@ -1397,7 +1397,7 @@
             ],
             "spec": {
               "featureName": "¿Datos válidos?",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Conserva el estado identificado de la solicitud y permite continuar sólo por la alternativa indicada.",
               "stories": [
                 {
@@ -1486,7 +1486,7 @@
             ],
             "spec": {
               "featureName": "Solicitud rechazada",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Finaliza sin reservar; se informa qué dato o permiso impide continuar.",
               "stories": [
                 {
@@ -1668,7 +1668,7 @@
             ],
             "spec": {
               "featureName": "Agendar la cita",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Abre el proceso de agendamiento y reserva un cupo de forma atómica; un reintento no crea una segunda reserva.",
               "stories": [
                 {
@@ -1773,7 +1773,7 @@
             ],
             "spec": {
               "featureName": "¿Reserva confirmada?",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Comprueba el resultado durable de la reserva antes de comunicar una cita al paciente.",
               "stories": [
                 {
@@ -1862,7 +1862,7 @@
             ],
             "spec": {
               "featureName": "Cita confirmada",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Se alcanza solamente después de guardar la reserva. Informa al paciente la cita confirmada.",
               "stories": [
                 {
@@ -1951,7 +1951,7 @@
             ],
             "spec": {
               "featureName": "Fecha de la cita",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Espera la fecha y hora de la cita, no inicia inmediatamente una consulta futura.",
               "stories": [
                 {
@@ -2014,7 +2014,7 @@
             "id": "general-v2-alternativa",
             "nombre": "Ofrecer alternativa",
             "tipo_elemento": "Tarea",
-            "descripcion": "Informa que no hay una reserva confirmada y ofrece reprogramación. No libera un cupo que nunca se reservó.",
+            "descripcion": "Informa que no hay una reserva confirmada y ofrece reprogramación. No libera un cupo que nunca se reservó.\nContexto dueño: Agenda. Dato: PropuestaReprogramacion(pacienteId, franjas). Evento: AlternativaReprogramacionOfrecida. Excepción: Sin cupo disponible -> Cita por reprogramar.",
             "fuente": "Taller-BPMN.md:82",
             "metadata": [
               {
@@ -2045,7 +2045,7 @@
             ],
             "spec": {
               "featureName": "Ofrecer alternativa",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Informa que no hay una reserva confirmada y ofrece reprogramación. No libera un cupo que nunca se reservó.",
               "stories": [
                 {
@@ -2134,7 +2134,7 @@
             ],
             "spec": {
               "featureName": "Reservas · BD",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Persistencia privada de Agenda: cupo, reserva, operación idempotente y resultado se confirman juntos.",
               "stories": [
                 {
@@ -2193,7 +2193,7 @@
             ],
             "spec": {
               "featureName": "Cita por reprogramar",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Conserva el estado identificado de la solicitud y permite continuar sólo por la alternativa indicada.",
               "stories": [
                 {
@@ -2407,7 +2407,7 @@
             "id": "general-v2-revisar",
             "nombre": "Revisar cita asignada",
             "tipo_elemento": "Tarea",
-            "descripcion": "Comprueba la cita confirmada y prepara al paciente para la atención.",
+            "descripcion": "Comprueba la cita confirmada y prepara al paciente para la atención.\nContexto dueño: Agenda. Dato: CitaConfirmada(citaId, cupoId, centroRuralId). Evento: CitaPreparadaParaAtencion. Excepción: Sin conexión -> compuerta ¿Hay conexión? desvía a borrador local.",
             "fuente": "Taller-BPMN.md:82",
             "metadata": [
               {
@@ -2438,7 +2438,7 @@
             ],
             "spec": {
               "featureName": "Revisar cita asignada",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Comprueba la cita confirmada y prepara al paciente para la atención.",
               "stories": [
                 {
@@ -2527,7 +2527,7 @@
             ],
             "spec": {
               "featureName": "¿Hay conexión?",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Una atención por video exige conexión; sin ella sólo se permite captura local y posterior sincronización.",
               "stories": [
                 {
@@ -2605,7 +2605,7 @@
             "id": "general-v2-local",
             "nombre": "Guardar borrador local",
             "tipo_elemento": "Tarea",
-            "descripcion": "Conserva los datos capturados y su identificador durablemente en el equipo; sin red no hay videollamada ni emisión firmada.",
+            "descripcion": "Conserva los datos capturados y su identificador durablemente en el equipo; sin red no hay videollamada ni emisión firmada.\nContexto dueño: Sincronización. Dato: BorradorLocalOffline(ulid, selloCentro, payload). Evento: BorradorOfflineEncolado. Excepción: Fallo de disco local -> conserva borrador sin simular teleconsulta.",
             "fuente": "Taller-BPMN.md:82",
             "metadata": [
               {
@@ -2636,7 +2636,7 @@
             ],
             "spec": {
               "featureName": "Guardar borrador local",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Conserva los datos capturados y su identificador durablemente en el equipo; sin red no hay videollamada ni emisión firmada.",
               "stories": [
                 {
@@ -2725,7 +2725,7 @@
             ],
             "spec": {
               "featureName": "Conexión recuperada",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Espera la recuperación efectiva de la red antes de intentar sincronizar.",
               "stories": [
                 {
@@ -2788,7 +2788,7 @@
             "id": "general-v2-sync",
             "nombre": "Sincronizar el borrador",
             "tipo_elemento": "Tarea",
-            "descripcion": "Envía las operaciones pendientes en orden, sin duplicados; los conflictos de cupo o receta firmada se rechazan para revisión. El borrador no demuestra que la teleconsulta ocurrió.",
+            "descripcion": "Envía las operaciones pendientes en orden, sin duplicados; los conflictos de cupo o receta firmada se rechazan para revisión. El borrador no demuestra que la teleconsulta ocurrió.\nContexto dueño: Sincronización. Dato: LoteSincronizacion(idempotencyKey, operaciones). Evento: LoteSincronizado. Excepción: Conflicto cupo/receta -> rechazo contra servidor; LWW asistencial -> doble auditoría.",
             "fuente": "Taller-BPMN.md:82",
             "metadata": [
               {
@@ -2819,7 +2819,7 @@
             ],
             "spec": {
               "featureName": "Sincronizar el borrador",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Envía las operaciones pendientes en orden, sin duplicados; los conflictos de cupo o receta firmada se rechazan para revisión. El borrador no demuestra que la teleconsulta ocurrió.",
               "stories": [
                 {
@@ -2893,7 +2893,7 @@
             ],
             "spec": {
               "featureName": "Atención por reprogramar",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Conserva el estado identificado de la solicitud y permite continuar sólo por la alternativa indicada.",
               "stories": [
                 {
@@ -2967,7 +2967,7 @@
             ],
             "spec": {
               "featureName": "Pendientes · disco local",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Cola durable de operaciones con UUID/ULID, fecha y contenido. Se conserva hasta la confirmación de sincronización.",
               "stories": [
                 {
@@ -3046,7 +3046,7 @@
             ],
             "spec": {
               "featureName": "Atender y registrar",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Realiza la teleconsulta y conserva signos, nota clínica y resultado; si la sesión no ocurrió o se interrumpió, mantiene el seguimiento pendiente.",
               "stories": [
                 {
@@ -3136,7 +3136,7 @@
             ],
             "spec": {
               "featureName": "¿Atención registrada?",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Conserva el estado identificado de la solicitud y permite continuar sólo por la alternativa indicada.",
               "stories": [
                 {
@@ -3240,7 +3240,7 @@
             ],
             "spec": {
               "featureName": "¿Se necesita receta?",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Evalúa la indicación del especialista para el episodio, sin imponer receta a toda atención.",
               "stories": [
                 {
@@ -3349,7 +3349,7 @@
             ],
             "spec": {
               "featureName": "Prescribir y firmar",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Exige autorización y firma válida. Guarda la receta y el envío pendiente en una sola transacción; emitir no equivale a entregar.",
               "stories": [
                 {
@@ -3454,7 +3454,7 @@
             ],
             "spec": {
               "featureName": "¿Firma y guardado válidos?",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Comprueba que la receta indicada se emitió con firma válida y no sólo que se intentó prescribir.",
               "stories": [
                 {
@@ -3543,7 +3543,7 @@
             ],
             "spec": {
               "featureName": "Receta emitida",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Sólo se alcanza después de confirmar la receta firmada y su envío recuperable.",
               "stories": [
                 {
@@ -3617,7 +3617,7 @@
             ],
             "spec": {
               "featureName": "Atención terminada",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Conserva el estado identificado de la solicitud y permite continuar sólo por la alternativa indicada.",
               "stories": [
                 {
@@ -3676,7 +3676,7 @@
             ],
             "spec": {
               "featureName": "Receta no emitida",
-              "status": "borrador",
+              "status": "revisado",
               "input": "La autorización, firma o persistencia fallida impide emitir; se conserva el motivo para corregir.",
               "stories": [
                 {
@@ -3750,7 +3750,7 @@
             ],
             "spec": {
               "featureName": "Prescripción por corregir",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Conserva el estado identificado de la solicitud y permite continuar sólo por la alternativa indicada.",
               "stories": [
                 {
@@ -3809,7 +3809,7 @@
             ],
             "spec": {
               "featureName": "Episodio clínico · BD",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Nota, signos, resultado y estado de la atención persistidos en el esquema privado del módulo clínico.",
               "stories": [
                 {
@@ -3868,7 +3868,7 @@
             ],
             "spec": {
               "featureName": "Recetas y envíos · BD",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Receta firmada y envío pendiente se conservan atómicamente. Un fallo de farmacia no elimina ni duplica la receta.",
               "stories": [
                 {
@@ -4453,7 +4453,7 @@
             ],
             "spec": {
               "featureName": "Consultar el historial",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Lee antecedentes vigentes desde la copia o desde el legado en su ventana autorizada; conserva la procedencia y caducidad. No entrega información sin permisos.",
               "stories": [
                 {
@@ -4603,7 +4603,7 @@
             ],
             "spec": {
               "featureName": "¿Lectura autorizada disponible?",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Comprueba que existe una respuesta válida del origen antes de continuar con la lectura clínica.",
               "stories": [
                 {
@@ -4681,7 +4681,7 @@
             "id": "general-v2-auditar",
             "nombre": "Registrar auditoría",
             "tipo_elemento": "Tarea",
-            "descripcion": "Guarda usuario, fecha, recurso, motivo y resultado antes de entregar los antecedentes. Si no se puede persistir la evidencia, se bloquea la entrega.",
+            "descripcion": "Guarda usuario, fecha, recurso, motivo y resultado antes de entregar los antecedentes. Si no se puede persistir la evidencia, se bloquea la entrega.\nContexto dueño: Auditoría. Dato: EventoAuditoriaClinica(usuario, fecha, recurso, motivo, resultado). Evento: LecturaClinicaAuditada. Excepción: ¿Auditoría guardada? = No -> Fallo al guardar auditoría (bloquea entrega).",
             "fuente": "Taller-BPMN.md:82",
             "metadata": [
               {
@@ -4712,7 +4712,7 @@
             ],
             "spec": {
               "featureName": "Registrar auditoría",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Guarda usuario, fecha, recurso, motivo y resultado antes de entregar los antecedentes. Si no se puede persistir la evidencia, se bloquea la entrega.",
               "stories": [
                 {
@@ -4801,7 +4801,7 @@
             ],
             "spec": {
               "featureName": "¿Auditoría guardada?",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Conserva el estado identificado de la solicitud y permite continuar sólo por la alternativa indicada.",
               "stories": [
                 {
@@ -4890,7 +4890,7 @@
             ],
             "spec": {
               "featureName": "Lectura no disponible",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Representa la falta de datos autorizados o un error de consulta; no inventa antecedentes.",
               "stories": [
                 {
@@ -4964,7 +4964,7 @@
             ],
             "spec": {
               "featureName": "Fallo al guardar auditoría",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Impide entregar datos clínicos si no se puede conservar evidencia de acceso.",
               "stories": [
                 {
@@ -5038,7 +5038,7 @@
             ],
             "spec": {
               "featureName": "Consulta bloqueada · revisar",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Conserva el estado identificado de la solicitud y permite continuar sólo por la alternativa indicada.",
               "stories": [
                 {
@@ -5112,7 +5112,7 @@
             ],
             "spec": {
               "featureName": "Historial · copia de lectura",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Datos mínimos de lectura con actualización y caducidad visibles. El legado conserva su fuente de verdad.",
               "stories": [
                 {
@@ -5171,7 +5171,7 @@
             ],
             "spec": {
               "featureName": "Auditoría · registro inmutable",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Conserva la evidencia de cada acceso clínico; la inmutabilidad y la residencia se mantienen según las políticas del caso.",
               "stories": [
                 {
@@ -5219,7 +5219,7 @@
             "id": "general-v2-enviar",
             "nombre": "Entregar a farmacia",
             "tipo_elemento": "Tarea",
-            "descripcion": "Procesa el envío durable de una receta ya emitida. Espera confirmación de recepción; si falla, conserva el pendiente para reintentar.",
+            "descripcion": "Procesa el envío durable de una receta ya emitida. Espera confirmación de recepción; si falla, conserva el pendiente para reintentar.\nContexto dueño: Receta. Dato: OrdenEnvioFarmacia(recetaId, estadoEntrega). Evento: RecetaEntregadaAFarmacia. Excepción: ¿Farmacia confirmó? = No -> Esperar reintento (outbox/SQS).",
             "fuente": "Taller-BPMN.md:82",
             "metadata": [
               {
@@ -5250,7 +5250,7 @@
             ],
             "spec": {
               "featureName": "Entregar a farmacia",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Procesa el envío durable de una receta ya emitida. Espera confirmación de recepción; si falla, conserva el pendiente para reintentar.",
               "stories": [
                 {
@@ -5399,7 +5399,7 @@
             ],
             "spec": {
               "featureName": "¿Farmacia confirmó?",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Conserva el estado identificado de la solicitud y permite continuar sólo por la alternativa indicada.",
               "stories": [
                 {
@@ -5488,7 +5488,7 @@
             ],
             "spec": {
               "featureName": "Esperar reintento",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Espera el intervalo de reintento configurado, aún pendiente de definición. La receta y el envío permanecen guardados.",
               "stories": [
                 {
@@ -5577,7 +5577,7 @@
             ],
             "spec": {
               "featureName": "Receta entregada",
-              "status": "borrador",
+              "status": "revisado",
               "input": "Finaliza la entrega sólo con confirmación de farmacia; no declara entrega por haber emitido la receta.",
               "stories": [
                 {
@@ -6573,7 +6573,7 @@
                   ],
                   "spec": {
                     "featureName": "Solicitud autorizada",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Inicia el subproceso de agendamiento una vez validados paciente, centro y permisos en Modelo.",
                     "stories": [
                       {
@@ -6632,7 +6632,7 @@
                   ],
                   "spec": {
                     "featureName": "Registrar datos e idemp.",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Conserva paciente, centro, motivo, especialista requerido y clave idempotente de correlación.",
                     "stories": [
                       {
@@ -6706,7 +6706,7 @@
                   ],
                   "spec": {
                     "featureName": "Rechazar colisión",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Rechaza explícitamente la operación repetida con contenido distinto sin crear ni liberar reservas.",
                     "stories": [
                       {
@@ -6780,7 +6780,7 @@
                   ],
                   "spec": {
                     "featureName": "Clave en conflicto",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Finaliza el intento con rechazo de clave conflictiva sin alterar cupos.",
                     "stories": [
                       {
@@ -6880,7 +6880,7 @@
                   ],
                   "spec": {
                     "featureName": "Consultar agenda vigente",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Consulta las franjas publicadas de los nueve especialistas con carácter informativo hasta bloquear cupo.",
                     "stories": [
                       {
@@ -6954,7 +6954,7 @@
                   ],
                   "spec": {
                     "featureName": "Verificar clave idempot.",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Comprueba si la clave idempotente ya existe en el contexto Agenda y valida coincidencia exacta de payload.",
                     "stories": [
                       {
@@ -7028,7 +7028,7 @@
                   ],
                   "spec": {
                     "featureName": "¿Clave válida?",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Distingue una clave nueva o reintento exacto de una colisión de clave con distinto contenido.",
                     "stories": [
                       {
@@ -7117,7 +7117,7 @@
                   ],
                   "spec": {
                     "featureName": "Reservar cupo atómico",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Bloquea el cupo y guarda reserva + clave idempotente en una única transacción atómica.",
                     "stories": [
                       {
@@ -7206,7 +7206,7 @@
                   ],
                   "spec": {
                     "featureName": "Claves y bloqueos · BD",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Persistencia transaccional de bloqueos de franja y claves idempotentes en el esquema privado de Agenda.",
                     "stories": [
                       {
@@ -7265,7 +7265,7 @@
                   ],
                   "spec": {
                     "featureName": "¿Cupo bloqueado?",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Comprueba si la transacción logró bloquear el cupo ante posible concurrencia de otro centro.",
                     "stories": [
                       {
@@ -7354,7 +7354,7 @@
                   ],
                   "spec": {
                     "featureName": "Preservar otros cupos",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Registra no disponibilidad y garantiza que nunca se libera un cupo que nunca llegó a reservarse.",
                     "stories": [
                       {
@@ -7428,7 +7428,7 @@
                   ],
                   "spec": {
                     "featureName": "Sin cupo reservado",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Devuelve resultado negativo a ¿Reserva confirmada? en Modelo para ofrecer alternativa.",
                     "stories": [
                       {
@@ -7581,7 +7581,7 @@
                   ],
                   "spec": {
                     "featureName": "Auditar reserva válida",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Conserva identidad, centro, timestamp, clave idempotente y resultado durable de la reserva.",
                     "stories": [
                       {
@@ -7655,7 +7655,7 @@
                   ],
                   "spec": {
                     "featureName": "Reserva consolidada",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Finaliza el subproceso devolviendo reserva confirmada lista para notificar al paciente en Modelo.",
                     "stories": [
                       {
@@ -7828,7 +7828,7 @@
                   ],
                   "spec": {
                     "featureName": "Historial auditado listo",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Inicia el acto clínico tras verificar conexión y guardar auditoría del historial en Modelo.",
                     "stories": [
                       {
@@ -7887,7 +7887,7 @@
                   ],
                   "spec": {
                     "featureName": "Admitir y verificar",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Comprueba permisos vigentes del episodio en curso y habilita la sala virtual del paciente.",
                     "stories": [
                       {
@@ -7961,7 +7961,7 @@
                   ],
                   "spec": {
                     "featureName": "Ejecutar teleconsulta",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Realiza la videollamada clínica y captura signos vitales e interrogatorio en tiempo real.",
                     "stories": [
                       {
@@ -8035,7 +8035,7 @@
                   ],
                   "spec": {
                     "featureName": "¿Sesión efectiva?",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Distingue una consulta remota realmente completada de una caída de video o inasistencia.",
                     "stories": [
                       {
@@ -8124,7 +8124,7 @@
                   ],
                   "spec": {
                     "featureName": "Redactar nota clínica",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Documenta diagnóstico, conducta clínica y vincula órdenes o adjuntos al episodio autorizado.",
                     "stories": [
                       {
@@ -8198,7 +8198,7 @@
                   ],
                   "spec": {
                     "featureName": "Validar adjuntos",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Verifica integridad, tamaño y residencia regional KMS/TLS de adjuntos antes de marcarlos disponibles.",
                     "stories": [
                       {
@@ -8272,7 +8272,7 @@
                   ],
                   "spec": {
                     "featureName": "Auditar cierre clínico",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Conserva evidencia inmutable de asistencia efectiva, autoría y resultado antes de habilitar receta.",
                     "stories": [
                       {
@@ -8346,7 +8346,7 @@
                   ],
                   "spec": {
                     "featureName": "Episodio consolidado",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Finaliza el subproceso listo para evaluar indicación de receta en Modelo.",
                     "stories": [
                       {
@@ -8482,7 +8482,7 @@
                   ],
                   "spec": {
                     "featureName": "Documentar incidencia",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Registra caída de red o ausencia del paciente sin declarar la teleconsulta como realizada.",
                     "stories": [
                       {
@@ -8556,7 +8556,7 @@
                   ],
                   "spec": {
                     "featureName": "Sesión inconclusa",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Devuelve resultado no completado a ¿Atención registrada? en Modelo para reprogramar.",
                     "stories": [
                       {
@@ -8615,7 +8615,7 @@
                   ],
                   "spec": {
                     "featureName": "Resolver cambios LWW",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Detecta ediciones concurrentes por campo; aplica last-writer-wins auditando ambos valores.",
                     "stories": [
                       {
@@ -8704,7 +8704,7 @@
                   ],
                   "spec": {
                     "featureName": "Bitácora LWW · auditoría",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Registra ambos valores en conflictos de campos independientes junto con sello de tiempo y usuario.",
                     "stories": [
                       {
@@ -8763,7 +8763,7 @@
                   ],
                   "spec": {
                     "featureName": "Confirmar guardado",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Persiste el episodio completo con clave idempotente para recuperar la respuesta sin duplicar en reintentos.",
                     "stories": [
                       {
@@ -8837,7 +8837,7 @@
                   ],
                   "spec": {
                     "featureName": "¿Guardado íntegro?",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Comprueba que nota, signos y adjuntos íntegros quedaron confirmados en el módulo clínico.",
                     "stories": [
                       {
@@ -8926,7 +8926,7 @@
                   ],
                   "spec": {
                     "featureName": "Registro incompleto",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Retorna estado pendiente sin confirmar cierre cuando la persistencia clínica falló.",
                     "stories": [
                       {
@@ -9152,7 +9152,7 @@
                   ],
                   "spec": {
                     "featureName": "Consulta clínica iniciada",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Inicia el subproceso de consulta tras confirmar conectividad en Modelo.",
                     "stories": [
                       {
@@ -9211,7 +9211,7 @@
                   ],
                   "spec": {
                     "featureName": "Verificar rol y motivo",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Comprueba rol, centro, especialidad, relación asistencial y finalidad clínica declarada.",
                     "stories": [
                       {
@@ -9285,7 +9285,7 @@
                   ],
                   "spec": {
                     "featureName": "¿Acceso autorizado?",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Autoriza avanzar sólo si permisos por atributos y motivo clínico son válidos.",
                     "stories": [
                       {
@@ -9374,7 +9374,7 @@
                   ],
                   "spec": {
                     "featureName": "Preparar vista mínima",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Normaliza y filtra únicamente los antecedentes mínimos pertinentes con origen, fecha y caducidad para auditar en Modelo.",
                     "stories": [
                       {
@@ -9463,7 +9463,7 @@
                   ],
                   "spec": {
                     "featureName": "Datos listos para auditar",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Finaliza el subproceso entregando el paquete con procedencia a ¿Lectura autorizada disponible? en Modelo.",
                     "stories": [
                       {
@@ -9573,7 +9573,7 @@
                   ],
                   "spec": {
                     "featureName": "Revisar copia y TTL",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Evalúa la copia mínima local contra fecha de actualización y TTL aún pendiente de definición.",
                     "stories": [
                       {
@@ -9662,7 +9662,7 @@
                   ],
                   "spec": {
                     "featureName": "Metadatos de copia · TTL",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Almacena fecha de última sincronización, procedencia y regla TTL de lectura sin alterar el legado.",
                     "stories": [
                       {
@@ -9721,7 +9721,7 @@
                   ],
                   "spec": {
                     "featureName": "¿Copia cumple TTL?",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Determina si la copia cumple el TTL vigente o requiere consultar la fuente autorizada del legado.",
                     "stories": [
                       {
@@ -9810,7 +9810,7 @@
                   ],
                   "spec": {
                     "featureName": "Verificar ventana legado",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Comprueba si la consulta cae dentro de la ventana nocturna SOAP o ventana autorizada de solo lectura.",
                     "stories": [
                       {
@@ -9884,7 +9884,7 @@
                   ],
                   "spec": {
                     "featureName": "¿Ventana activa?",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Distingue ventana habilitada para lectura del legado de un horario restringido.",
                     "stories": [
                       {
@@ -9973,7 +9973,7 @@
                   ],
                   "spec": {
                     "featureName": "Protocolo de urgencia",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Informa indisponibilidad explícita sin inventar datos y remite urgencias al protocolo pendiente del centro.",
                     "stories": [
                       {
@@ -10047,7 +10047,7 @@
                   ],
                   "spec": {
                     "featureName": "Fuera de ventana",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Devuelve indisponibilidad explícita hacia Modelo (¿Lectura autorizada disponible? = No).",
                     "stories": [
                       {
@@ -10106,7 +10106,7 @@
                   ],
                   "spec": {
                     "featureName": "Consultar solo lectura",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Obtiene antecedentes desde legado read-only autorizado y actualiza copia mínima sin modificar fuente origen.",
                     "stories": [
                       {
@@ -10283,7 +10283,7 @@
                   ],
                   "spec": {
                     "featureName": "Auditar intento denegado",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Registra usuario, fecha, recurso y motivo de rechazo en archivo inmutable sin exponer datos clínicos.",
                     "stories": [
                       {
@@ -10372,7 +10372,7 @@
                   ],
                   "spec": {
                     "featureName": "Bitácora de rechazos · BD",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Evidencia durable de intentos de acceso clínico denegados bajo S3 Object Lock Compliance.",
                     "stories": [
                       {
@@ -10431,7 +10431,7 @@
                   ],
                   "spec": {
                     "featureName": "Acceso denegado",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Devuelve rechazo auditado sin datos hacia Modelo.",
                     "stories": [
                       {
@@ -10638,7 +10638,7 @@
                   ],
                   "spec": {
                     "featureName": "Indicación activa",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Inicia el subproceso de prescripción tras indicarse receta médica en Modelo.",
                     "stories": [
                       {
@@ -10697,7 +10697,7 @@
                   ],
                   "spec": {
                     "featureName": "Verificar prescriptor",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Verifica identidad, matrícula habilitada y permiso contra el servidor; en borde offline se rechaza.",
                     "stories": [
                       {
@@ -10771,7 +10771,7 @@
                   ],
                   "spec": {
                     "featureName": "¿Prescriptor habilitado?",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Exige autorización vigente del profesional para el centro y episodio en servidor.",
                     "stories": [
                       {
@@ -10860,7 +10860,7 @@
                   ],
                   "spec": {
                     "featureName": "Preparar y validar receta",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Asocia fármacos, posología, diagnóstico y valida completitud antes de generar el hash firmable.",
                     "stories": [
                       {
@@ -10934,7 +10934,7 @@
                   ],
                   "spec": {
                     "featureName": "Solicitar firma KMS",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Firma el hash definitivo usando clave de contexto KMS con rotación y transporte TLS en región aprobada.",
                     "stories": [
                       {
@@ -11008,7 +11008,7 @@
                   ],
                   "spec": {
                     "featureName": "¿Firma aceptada?",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Comprueba validez criptográfica de la firma y correspondencia exacta con prescriptor y contenido.",
                     "stories": [
                       {
@@ -11097,7 +11097,7 @@
                   ],
                   "spec": {
                     "featureName": "Sellar receta y outbox",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Ejecuta la transacción única que persiste receta firmada y encola orden recuperable en outbox.",
                     "stories": [
                       {
@@ -11186,7 +11186,7 @@
                   ],
                   "spec": {
                     "featureName": "Firma y hash KMS · BD",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Respalda certificado de firma, clave de contexto rotada y digest SHA de la receta confirmada.",
                     "stories": [
                       {
@@ -11331,7 +11331,7 @@
                   ],
                   "spec": {
                     "featureName": "Auditar rechazo emisión",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Conserva evidencia del intento denegado sin generar borrador emitido ni permiso temporal.",
                     "stories": [
                       {
@@ -11405,7 +11405,7 @@
                   ],
                   "spec": {
                     "featureName": "Prescripción denegada",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Devuelve autorización rechazada a ¿Firma y guardado válidos? en Modelo.",
                     "stories": [
                       {
@@ -11464,7 +11464,7 @@
                   ],
                   "spec": {
                     "featureName": "Guardar fallo de firma",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Conserva el borrador corregible y el detalle del rechazo criptográfico o de red.",
                     "stories": [
                       {
@@ -11538,7 +11538,7 @@
                   ],
                   "spec": {
                     "featureName": "Firma fallida · corregir",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Retorna error de firma a Modelo para corregir la prescripción sin emisión.",
                     "stories": [
                       {
@@ -11597,7 +11597,7 @@
                   ],
                   "spec": {
                     "featureName": "¿Tx atómica guardada?",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Verifica el commit conjunto de receta firmada + outbox antes de habilitar la emisión en Modelo.",
                     "stories": [
                       {
@@ -11686,7 +11686,7 @@
                   ],
                   "spec": {
                     "featureName": "Revertir sin emitir",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Aplica rollback limpio y preserva motivo de fallo para reintento seguro sin recetas a medias.",
                     "stories": [
                       {
@@ -11760,7 +11760,7 @@
                   ],
                   "spec": {
                     "featureName": "Emisión revertida",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Informa aborto seguro hacia Modelo (¿Firma y guardado válidos? = No).",
                     "stories": [
                       {
@@ -11819,7 +11819,7 @@
                   ],
                   "spec": {
                     "featureName": "Receta lista para envío",
-                    "status": "borrador",
+                    "status": "revisado",
                     "input": "Finaliza con receta firmada y outbox asegurado; Modelo prosigue con emisión y entrega a farmacia.",
                     "stories": [
                       {

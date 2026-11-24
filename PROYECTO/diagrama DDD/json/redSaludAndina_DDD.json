@@ -1,0 +1,2295 @@
+{
+  "formato": "processflow-board/v1",
+  "proyecto": {
+    "nombre_proyecto": "redSaludAndina_DDD",
+    "notation": "ddd",
+    "notas": "# DDD RedSalud Andina — Monolito Modular Spring Boot (Java 21)\n\n## Subdominios y Contextos Delimitados\n- **Core · Atención Teleclínica**: `Interconsulta` (máquina de estados), `Agenda` (cupos `@Version`), `Episodio Clínico` (teleconsulta + adjuntos KMS) y `Receta Electrónica` (firma KMS + outbox SQS).\n- **Soporte · Sync y Analítica**: `Sincronización Offline` (ULID `Idempotency-Key`, LWW por campo en asistencial + rechazo en cupos/recetas) y `Analítica de Uso` (proyección eventual SLO 99.5%).\n- **Genérico · Acceso, Legado y Aud.**: `Identidad y Acceso` (OAuth2 + ABAC por rol, centro y relación), `Integración Legado` (`HistorialClinicoPort`, ACL SOAP nocturno + Caffeine/ElastiCache) y `Auditoría` (append-only S3 Object Lock WORM).\n\n## Invariantes Arquitectónicos (Taller Sesiones 1–4)\n1. **Nadie escribe en el almacén de otro**: esquemas Flyway aislados por módulo, sin `@ManyToOne` ni `JOIN` cruzados (ArchUnit en verde).\n2. **Offline-first idempotente**: reintentos triples con orden alterado no duplican ni pierden episodios (`POST /sync/episodios`).\n3. **Subvistas tácticas embebidas**: `01 · Agenda e Interconsulta`, `02 · Episodio y Sync Offline`, `03 · Receta, KMS y Outbox`, `04 · ACL Legado y Auditoría`.",
+    "agregados": [
+      {
+        "nombre_agregado": "Core · Atención Teleclínica",
+        "tipo_contenedor": "Subdominio",
+        "entidad_raiz": "Subdominio medular diferencial de RedSalud Andina: gestiona interconsultas, agenda sin doble reserva, episodios con teleconsulta y recetas firmadas.",
+        "descripcion": "Subdominio medular diferencial de RedSalud Andina: gestiona interconsultas, agenda sin doble reserva, episodios con teleconsulta y recetas firmadas.",
+        "fuente": "Taller §1-4 · RedSalud Andina",
+        "x": 300,
+        "y": 120,
+        "width": 2220,
+        "height": 1360,
+        "nodos": [],
+        "aristas": []
+      },
+      {
+        "nombre_agregado": "Interconsulta",
+        "tipo_contenedor": "Contexto Delimitado",
+        "entidad_raiz": "Contexto delimitado que coordina derivaciones clínicas desde centros rurales hacia especialistas con máquina de estados auditable.",
+        "descripcion": "Contexto delimitado que coordina derivaciones clínicas desde centros rurales hacia especialistas con máquina de estados auditable.",
+        "fuente": "Taller §1-4 · RedSalud Andina · Módulo Interconsulta",
+        "metadata": [
+          {
+            "clave": "codigo",
+            "valor": "modules/interconsulta"
+          }
+        ],
+        "x": 470,
+        "y": 328,
+        "width": 920,
+        "height": 445,
+        "nodos": [
+          {
+            "id": "c_inter_ohs",
+            "nombre": "OHS Interconsulta API",
+            "tipo_elemento": "Servicio de Host Abierto (OHS)",
+            "descripcion": "Contrato público REST/evento que publica derivaciones y solicita reserva de cupo.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Módulo Interconsulta",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/interconsulta"
+              }
+            ],
+            "x": 1095,
+            "y": 488,
+            "viewRef": "23ad4c61-c15b-5c89-946d-60187c20b547"
+          }
+        ],
+        "aristas": []
+      },
+      {
+        "nombre_agregado": "Agregado Interconsulta",
+        "tipo_contenedor": "Agregado",
+        "entidad_raiz": "Agregado transaccional que controla transiciones válidas de derivación y dispara notificaciones SQS.",
+        "descripcion": "Agregado transaccional que controla transiciones válidas de derivación y dispara notificaciones SQS.",
+        "fuente": "Taller §1-4 · RedSalud Andina · Módulo Interconsulta",
+        "metadata": [
+          {
+            "clave": "codigo",
+            "valor": "modules/interconsulta"
+          }
+        ],
+        "x": 530,
+        "y": 363,
+        "width": 550,
+        "height": 355,
+        "nodos": [
+          {
+            "id": "c_inter_root",
+            "nombre": "Interconsulta",
+            "tipo_elemento": "Raíz de Agregado",
+            "descripcion": "Raíz de agregado con bloqueo optimista @Version y máquina de estados de derivación rural.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Módulo Interconsulta",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/interconsulta"
+              }
+            ],
+            "x": 695,
+            "y": 416
+          },
+          {
+            "id": "c_inter_vo",
+            "nombre": "EstadoDerivación",
+            "tipo_elemento": "Objeto de Valor",
+            "descripcion": "Objeto de valor inmutable que encapsula transición válida y prioridad clínica.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Módulo Interconsulta",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/interconsulta"
+              }
+            ],
+            "x": 573,
+            "y": 534
+          },
+          {
+            "id": "c_inter_repo",
+            "nombre": "RepoInterconsultas",
+            "tipo_elemento": "Repositorio",
+            "descripcion": "Repositorio JPA sobre esquema aislado de Aurora PostgreSQL sin @ManyToOne cruzados.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Módulo Interconsulta",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/interconsulta"
+              }
+            ],
+            "x": 817,
+            "y": 534
+          }
+        ],
+        "aristas": []
+      },
+      {
+        "nombre_agregado": "Agenda",
+        "tipo_contenedor": "Contexto Delimitado",
+        "entidad_raiz": "Contexto delimitado propietario exclusivo de disponibilidad horaria de especialistas y reservas de cita sin sobreventa.",
+        "descripcion": "Contexto delimitado propietario exclusivo de disponibilidad horaria de especialistas y reservas de cita sin sobreventa.",
+        "fuente": "Taller §1-4 · RedSalud Andina · Ses. 1 y 3",
+        "metadata": [
+          {
+            "clave": "codigo",
+            "valor": "modules/agenda"
+          }
+        ],
+        "x": 1430,
+        "y": 328,
+        "width": 920,
+        "height": 445,
+        "nodos": [
+          {
+            "id": "c_ag_ohs",
+            "nombre": "OHS Agenda API",
+            "tipo_elemento": "Servicio de Host Abierto (OHS)",
+            "descripcion": "Contrato público REST/evento de reservas; prohíbe JOIN directo desde Episodio.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Ses. 1 y 3",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/agenda"
+              }
+            ],
+            "x": 2055,
+            "y": 488
+          }
+        ],
+        "aristas": []
+      },
+      {
+        "nombre_agregado": "Agregado CupoCita",
+        "tipo_contenedor": "Agregado",
+        "entidad_raiz": "Agregado protegido con @Version que garantiza consistencia fuerte en asignación de cupos.",
+        "descripcion": "Agregado protegido con @Version que garantiza consistencia fuerte en asignación de cupos.",
+        "fuente": "Taller §1-4 · RedSalud Andina · Ses. 1 y 3",
+        "metadata": [
+          {
+            "clave": "codigo",
+            "valor": "modules/agenda"
+          }
+        ],
+        "x": 1490,
+        "y": 363,
+        "width": 550,
+        "height": 355,
+        "nodos": [
+          {
+            "id": "c_ag_root",
+            "nombre": "CupoEspecialista",
+            "tipo_elemento": "Raíz de Agregado",
+            "descripcion": "Raíz de agregado con @Version para rechazar reservas concurrentes o cupos ya tomados.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Ses. 1 y 3",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/agenda"
+              }
+            ],
+            "x": 1655,
+            "y": 416
+          },
+          {
+            "id": "c_ag_ent",
+            "nombre": "CitaTelemedicina",
+            "tipo_elemento": "Entidad",
+            "descripcion": "Entidad hija dentro del agregado que asocia paciente, franja horaria y sala WebRTC.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Ses. 1 y 3",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/agenda"
+              }
+            ],
+            "x": 1533,
+            "y": 534
+          },
+          {
+            "id": "c_ag_repo",
+            "nombre": "RepoCuposOptimista",
+            "tipo_elemento": "Repositorio",
+            "descripcion": "Repositorio Aurora PostgreSQL del esquema agenda con índices por especialista y franja.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Ses. 1 y 3",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/agenda"
+              }
+            ],
+            "x": 1777,
+            "y": 534
+          }
+        ],
+        "aristas": []
+      },
+      {
+        "nombre_agregado": "Episodio Clínico",
+        "tipo_contenedor": "Contexto Delimitado",
+        "entidad_raiz": "Contexto delimitado central de la atención teleclínica: registra evolución, notas asistenciales y adjuntos cifrados en S3.",
+        "descripcion": "Contexto delimitado central de la atención teleclínica: registra evolución, notas asistenciales y adjuntos cifrados en S3.",
+        "fuente": "Taller §1-4 · RedSalud Andina · Ses. 1 y 3",
+        "metadata": [
+          {
+            "clave": "codigo",
+            "valor": "modules/episodio"
+          }
+        ],
+        "x": 1430,
+        "y": 828,
+        "width": 920,
+        "height": 445,
+        "nodos": [
+          {
+            "id": "c_ep_ohs",
+            "nombre": "OHS Episodio API",
+            "tipo_elemento": "Servicio de Host Abierto (OHS)",
+            "descripcion": "Punto de entrada del monolito modular que coordina teleconsulta y lecturas clínicas.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Ses. 1 y 3",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/episodio"
+              }
+            ],
+            "x": 2055,
+            "y": 988,
+            "viewRef": "59df5126-ee12-5b42-a8c0-7bd6e2cf12f2"
+          }
+        ],
+        "aristas": []
+      },
+      {
+        "nombre_agregado": "Agregado Episodio",
+        "tipo_contenedor": "Agregado",
+        "entidad_raiz": "Agregado dueño de la atención clínica, versionado por campo para resolución LWW controlada.",
+        "descripcion": "Agregado dueño de la atención clínica, versionado por campo para resolución LWW controlada.",
+        "fuente": "Taller §1-4 · RedSalud Andina · Ses. 1 y 3",
+        "metadata": [
+          {
+            "clave": "codigo",
+            "valor": "modules/episodio"
+          }
+        ],
+        "x": 1490,
+        "y": 863,
+        "width": 550,
+        "height": 355,
+        "nodos": [
+          {
+            "id": "c_ep_root",
+            "nombre": "EpisodioClínico",
+            "tipo_elemento": "Raíz de Agregado",
+            "descripcion": "Raíz de agregado identificada por UUID/ULID cliente y sellos de tiempo por campo clínico.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Ses. 1 y 3",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/episodio"
+              }
+            ],
+            "x": 1655,
+            "y": 916
+          },
+          {
+            "id": "c_ep_ent",
+            "nombre": "AdjuntoCifradoS3",
+            "tipo_elemento": "Entidad",
+            "descripcion": "Entidad referenciando objeto en S3 cifrado con clave KMS dedicada por contexto.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Ses. 1 y 3",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/episodio"
+              }
+            ],
+            "x": 1533,
+            "y": 1034
+          },
+          {
+            "id": "c_ep_repo",
+            "nombre": "RepoEpisodios",
+            "tipo_elemento": "Repositorio",
+            "descripcion": "Repositorio Flyway-aislado del esquema episodio con eventos de dominio emitidos.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Ses. 1 y 3",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/episodio"
+              }
+            ],
+            "x": 1777,
+            "y": 1034
+          }
+        ],
+        "aristas": []
+      },
+      {
+        "nombre_agregado": "Receta Electrónica",
+        "tipo_contenedor": "Contexto Delimitado",
+        "entidad_raiz": "Contexto delimitado que valida prescripción, firma electrónicamente con KMS y despacha por Outbox + SQS hacia farmacia.",
+        "descripcion": "Contexto delimitado que valida prescripción, firma electrónicamente con KMS y despacha por Outbox + SQS hacia farmacia.",
+        "fuente": "Taller §1-4 · RedSalud Andina · Ses. 3 y 4",
+        "metadata": [
+          {
+            "clave": "codigo",
+            "valor": "modules/receta"
+          }
+        ],
+        "x": 470,
+        "y": 828,
+        "width": 920,
+        "height": 445,
+        "nodos": [
+          {
+            "id": "c_rec_pl",
+            "nombre": "PL Contrato SQS",
+            "tipo_elemento": "Lenguaje Publicado (PL)",
+            "descripcion": "Esquema canónico ordenado por agregado publicado hacia SQS y farmacia rural.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Ses. 3 y 4",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/receta"
+              }
+            ],
+            "x": 545,
+            "y": 988,
+            "viewRef": "d37069ac-dce2-57c0-8ccc-f2d49b168475"
+          }
+        ],
+        "aristas": []
+      },
+      {
+        "nombre_agregado": "Agregado Receta",
+        "tipo_contenedor": "Agregado",
+        "entidad_raiz": "Agregado inmutable tras firma KMS; cualquier reintento en conflicto se rechaza en servidor.",
+        "descripcion": "Agregado inmutable tras firma KMS; cualquier reintento en conflicto se rechaza en servidor.",
+        "fuente": "Taller §1-4 · RedSalud Andina · Ses. 3 y 4",
+        "metadata": [
+          {
+            "clave": "codigo",
+            "valor": "modules/receta"
+          }
+        ],
+        "x": 780,
+        "y": 863,
+        "width": 550,
+        "height": 355,
+        "nodos": [
+          {
+            "id": "c_rec_root",
+            "nombre": "RecetaMédica",
+            "tipo_elemento": "Raíz de Agregado",
+            "descripcion": "Raíz de agregado que bloquea modificaciones posteriores a la firma criptográfica.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Ses. 3 y 4",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/receta"
+              }
+            ],
+            "x": 945,
+            "y": 916
+          },
+          {
+            "id": "c_rec_vo",
+            "nombre": "FirmaKMS",
+            "tipo_elemento": "Objeto de Valor",
+            "descripcion": "Objeto de valor con resumen SHA, certificado vigente y timestamp emitido por AWS KMS.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Ses. 3 y 4",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/receta"
+              }
+            ],
+            "x": 823,
+            "y": 1034
+          },
+          {
+            "id": "c_rec_repo",
+            "nombre": "RepoRecetaOutbox",
+            "tipo_elemento": "Repositorio",
+            "descripcion": "Persiste receta firmada y evento en tabla outbox dentro de la misma tx en Aurora.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Ses. 3 y 4",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/receta"
+              }
+            ],
+            "x": 1067,
+            "y": 1034
+          }
+        ],
+        "aristas": []
+      },
+      {
+        "nombre_agregado": "Soporte · Sync y Analítica",
+        "tipo_contenedor": "Subdominio",
+        "entidad_raiz": "Subdominio de soporte operativo rural: habilita captura offline-first con idempotencia ULID, resolución LWW/rechazo y métricas de adopción.",
+        "descripcion": "Subdominio de soporte operativo rural: habilita captura offline-first con idempotencia ULID, resolución LWW/rechazo y métricas de adopción.",
+        "fuente": "Taller §1-4 · RedSalud Andina",
+        "x": 300,
+        "y": 1600,
+        "width": 2220,
+        "height": 690,
+        "nodos": [],
+        "aristas": []
+      },
+      {
+        "nombre_agregado": "Sincronización Offline",
+        "tipo_contenedor": "Contexto Delimitado",
+        "entidad_raiz": "Contexto delimitado del borde offline-first (14 centros, 5 con 2 Mbps): garantiza idempotencia real y política explícita de conflictos.",
+        "descripcion": "Contexto delimitado del borde offline-first (14 centros, 5 con 2 Mbps): garantiza idempotencia real y política explícita de conflictos.",
+        "fuente": "Taller §1-4 · RedSalud Andina · Sesión 3",
+        "metadata": [
+          {
+            "clave": "codigo",
+            "valor": "modules/sincronizacion"
+          }
+        ],
+        "x": 470,
+        "y": 1723,
+        "width": 920,
+        "height": 445,
+        "nodos": [
+          {
+            "id": "s_sy_reg",
+            "nombre": "Regla LWW y Rechazo",
+            "tipo_elemento": "Regla de Negocio",
+            "descripcion": "Graba ambos valores en conflicto asistencial a Auditoría y rechaza choque en cupos/recetas.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Sesión 3",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/sincronizacion"
+              }
+            ],
+            "x": 1095,
+            "y": 1883
+          }
+        ],
+        "aristas": []
+      },
+      {
+        "nombre_agregado": "Agregado LoteSync",
+        "tipo_contenedor": "Agregado",
+        "entidad_raiz": "Agregado que registra clave ULID única en BD para responder reproduciblemente ante reintentos.",
+        "descripcion": "Agregado que registra clave ULID única en BD para responder reproduciblemente ante reintentos.",
+        "fuente": "Taller §1-4 · RedSalud Andina · Sesión 3",
+        "metadata": [
+          {
+            "clave": "codigo",
+            "valor": "modules/sincronizacion"
+          }
+        ],
+        "x": 530,
+        "y": 1758,
+        "width": 550,
+        "height": 355,
+        "nodos": [
+          {
+            "id": "s_sy_root",
+            "nombre": "LoteSincronización",
+            "tipo_elemento": "Raíz de Agregado",
+            "descripcion": "Raíz ordenada por agregado con Idempotency-Key única en Aurora PostgreSQL.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Sesión 3",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/sincronizacion"
+              }
+            ],
+            "x": 695,
+            "y": 1811
+          },
+          {
+            "id": "s_sy_vo",
+            "nombre": "ClaveIdempotencia",
+            "tipo_elemento": "Objeto de Valor",
+            "descripcion": "Identificador ULID + sello temporal del centro rural que impide duplicación.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Sesión 3",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/sincronizacion"
+              }
+            ],
+            "x": 573,
+            "y": 1929
+          },
+          {
+            "id": "s_sy_srv",
+            "nombre": "ResolutorConflictos",
+            "tipo_elemento": "Servicio de Dominio",
+            "descripcion": "Aplica LWW por campo en datos asistenciales y rechaza conflictos en cupos/recetas.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Sesión 3",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/sincronizacion"
+              }
+            ],
+            "x": 817,
+            "y": 1929
+          }
+        ],
+        "aristas": []
+      },
+      {
+        "nombre_agregado": "Analítica de Uso",
+        "tipo_contenedor": "Contexto Delimitado",
+        "entidad_raiz": "Contexto delimitado de proyección eventual que consume eventos para tablero operativo y monitoreo de SLO 99.5%.",
+        "descripcion": "Contexto delimitado de proyección eventual que consume eventos para tablero operativo y monitoreo de SLO 99.5%.",
+        "fuente": "RedSalud Andina - Arquitectura",
+        "metadata": [
+          {
+            "clave": "codigo",
+            "valor": "modules/analitica"
+          }
+        ],
+        "x": 1480,
+        "y": 1735,
+        "width": 820,
+        "height": 420,
+        "nodos": [
+          {
+            "id": "s_an_vista",
+            "nombre": "Vista SLO 99.5%",
+            "tipo_elemento": "Vista",
+            "descripcion": "Read model Micrometer/OpenTelemetry que monitorea latencia y tasa de error sin tocar tablas Core.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Sesión 4",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/analitica"
+              }
+            ],
+            "x": 2005,
+            "y": 1883
+          }
+        ],
+        "aristas": []
+      },
+      {
+        "nombre_agregado": "Agregado MétricaUso",
+        "tipo_contenedor": "Agregado",
+        "entidad_raiz": "Agregado CQRS de solo lectura alimentado asíncronamente por eventos clínicos.",
+        "descripcion": "Agregado CQRS de solo lectura alimentado asíncronamente por eventos clínicos.",
+        "fuente": "RedSalud Andina - Arquitectura",
+        "metadata": [
+          {
+            "clave": "codigo",
+            "valor": "modules/analitica"
+          }
+        ],
+        "x": 1565,
+        "y": 1815,
+        "width": 400,
+        "height": 240,
+        "nodos": [
+          {
+            "id": "s_an_root",
+            "nombre": "TableroAdopción",
+            "tipo_elemento": "Raíz de Agregado",
+            "descripcion": "Raíz de proyección por centro rural que mide adopciones, teleconsultas y reconexión ≤ 15 min.",
+            "fuente": "RedSalud Andina - Arquitectura",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/analitica"
+              }
+            ],
+            "x": 1655,
+            "y": 1883
+          }
+        ],
+        "aristas": []
+      },
+      {
+        "nombre_agregado": "Genérico · Acceso, Legado y Aud.",
+        "tipo_contenedor": "Subdominio",
+        "entidad_raiz": "Subdominio genérico transversal en región única AWS: controla acceso OAuth2+ABAC, aísla SOAP legado mediante ACL y registra auditoría WORM.",
+        "descripcion": "Subdominio genérico transversal en región única AWS: controla acceso OAuth2+ABAC, aísla SOAP legado mediante ACL y registra auditoría WORM.",
+        "fuente": "Taller §1-4 · RedSalud Andina",
+        "x": 2550,
+        "y": 115,
+        "width": 1160,
+        "height": 2260,
+        "nodos": [],
+        "aristas": []
+      },
+      {
+        "nombre_agregado": "Identidad y Acceso",
+        "tipo_contenedor": "Contexto Delimitado",
+        "entidad_raiz": "Contexto delimitado que materializa autenticación OAuth2 JWT y políticas ABAC por centro, especialidad y relación con paciente.",
+        "descripcion": "Contexto delimitado que materializa autenticación OAuth2 JWT y políticas ABAC por centro, especialidad y relación con paciente.",
+        "fuente": "Taller §1-4 · RedSalud Andina · Sesión 4",
+        "metadata": [
+          {
+            "clave": "codigo",
+            "valor": "modules/identidad"
+          }
+        ],
+        "x": 2720,
+        "y": 340,
+        "width": 820,
+        "height": 420,
+        "nodos": [
+          {
+            "id": "g_id_acl",
+            "nombre": "ACL OIDC / OAuth2",
+            "tipo_elemento": "Capa Anticorrupción (ACL)",
+            "descripcion": "Traduce tokens externos del proveedor OIDC al modelo interno de atributos ABAC.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Sesión 4",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/identidad"
+              }
+            ],
+            "x": 3250,
+            "y": 488
+          }
+        ],
+        "aristas": []
+      },
+      {
+        "nombre_agregado": "Agregado SesiónABAC",
+        "tipo_contenedor": "Agregado",
+        "entidad_raiz": "Agregado de contexto de seguridad evaluado en capa de servicio con AuthorizationManager.",
+        "descripcion": "Agregado de contexto de seguridad evaluado en capa de servicio con AuthorizationManager.",
+        "fuente": "Taller §1-4 · RedSalud Andina · Sesión 4",
+        "metadata": [
+          {
+            "clave": "codigo",
+            "valor": "modules/identidad"
+          }
+        ],
+        "x": 2795,
+        "y": 375,
+        "width": 420,
+        "height": 330,
+        "nodos": [
+          {
+            "id": "g_id_root",
+            "nombre": "PrincipalClínico",
+            "tipo_elemento": "Raíz de Agregado",
+            "descripcion": "Raíz de identidad con claims de centro rural, rol clínico/admin y especialidad.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Sesión 4",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/identidad"
+              }
+            ],
+            "x": 2895,
+            "y": 420
+          },
+          {
+            "id": "g_id_srv",
+            "nombre": "AutorizadorABAC",
+            "tipo_elemento": "Servicio de Dominio",
+            "descripcion": "Evalúa @PreAuthorize + atributos antes de exponer datos clínicos; bloquea rol admin.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Sesión 4",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/identidad"
+              }
+            ],
+            "x": 2895,
+            "y": 536
+          }
+        ],
+        "aristas": []
+      },
+      {
+        "nombre_agregado": "Integración Legado",
+        "tipo_contenedor": "Contexto Delimitado",
+        "entidad_raiz": "Contexto delimitado frontera que protege al dominio frente al SOAP nocturno heredado mediante Circuit Breaker y caché en dos niveles.",
+        "descripcion": "Contexto delimitado frontera que protege al dominio frente al SOAP nocturno heredado mediante Circuit Breaker y caché en dos niveles.",
+        "fuente": "Taller §1-4 · RedSalud Andina · Sesión 2",
+        "metadata": [
+          {
+            "clave": "codigo",
+            "valor": "modules/legado-acl"
+          }
+        ],
+        "x": 2720,
+        "y": 840,
+        "width": 820,
+        "height": 420,
+        "nodos": [
+          {
+            "id": "g_leg_acl",
+            "nombre": "ACL SOAP Nocturno",
+            "tipo_elemento": "Capa Anticorrupción (ACL)",
+            "descripcion": "Implementa HistorialClinicoPort con WebServiceTemplate + Resilience4j frente al legado.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Sesión 2",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/legado-acl"
+              }
+            ],
+            "x": 3250,
+            "y": 988,
+            "viewRef": "b5b738a5-8036-5d96-b20f-143dd40ba35d"
+          }
+        ],
+        "aristas": []
+      },
+      {
+        "nombre_agregado": "Agregado HistorialVista",
+        "tipo_contenedor": "Agregado",
+        "entidad_raiz": "Vista materializada local con TTL explícito y degradación controlada ≤ 6 s.",
+        "descripcion": "Vista materializada local con TTL explícito y degradación controlada ≤ 6 s.",
+        "fuente": "Taller §1-4 · RedSalud Andina · Sesión 2",
+        "metadata": [
+          {
+            "clave": "codigo",
+            "valor": "modules/legado-acl"
+          }
+        ],
+        "x": 2795,
+        "y": 875,
+        "width": 420,
+        "height": 330,
+        "nodos": [
+          {
+            "id": "g_leg_root",
+            "nombre": "HistorialCanónico",
+            "tipo_elemento": "Raíz de Agregado",
+            "descripcion": "Proyección traducida del historial heredado con cabecera X-Data-Freshness.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Sesión 2",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/legado-acl"
+              }
+            ],
+            "x": 2895,
+            "y": 920
+          },
+          {
+            "id": "g_leg_repo",
+            "nombre": "CacheTwoLevelRepo",
+            "tipo_elemento": "Repositorio",
+            "descripcion": "Caché L1 Caffeine + L2 ElastiCache/DynamoDB que responde en p95 ≤ 2 s.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Sesión 2",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/legado-acl"
+              }
+            ],
+            "x": 2895,
+            "y": 1036
+          }
+        ],
+        "aristas": []
+      },
+      {
+        "nombre_agregado": "Auditoría",
+        "tipo_contenedor": "Contexto Delimitado",
+        "entidad_raiz": "Contexto delimitado append-only que responde quién vio qué historia clínica, cuándo y con qué motivo asistencial.",
+        "descripcion": "Contexto delimitado append-only que responde quién vio qué historia clínica, cuándo y con qué motivo asistencial.",
+        "fuente": "Taller §1-4 · RedSalud Andina · Sesión 4",
+        "metadata": [
+          {
+            "clave": "codigo",
+            "valor": "modules/auditoria"
+          }
+        ],
+        "x": 2720,
+        "y": 1735,
+        "width": 820,
+        "height": 420,
+        "nodos": [
+          {
+            "id": "g_au_reg",
+            "nombre": "Object Lock WORM",
+            "tipo_elemento": "Regla de Negocio",
+            "descripcion": "Exige motivo, usuario y recurso en toda lectura clínica antes de devolver respuesta.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Sesión 4",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/auditoria"
+              }
+            ],
+            "x": 3250,
+            "y": 1883
+          }
+        ],
+        "aristas": []
+      },
+      {
+        "nombre_agregado": "Agregado TrazaAcceso",
+        "tipo_contenedor": "Agregado",
+        "entidad_raiz": "Agregado inmutable sin borrado ni actualización, persistido en S3 Object Lock.",
+        "descripcion": "Agregado inmutable sin borrado ni actualización, persistido en S3 Object Lock.",
+        "fuente": "Taller §1-4 · RedSalud Andina · Sesión 4",
+        "metadata": [
+          {
+            "clave": "codigo",
+            "valor": "modules/auditoria"
+          }
+        ],
+        "x": 2795,
+        "y": 1770,
+        "width": 420,
+        "height": 330,
+        "nodos": [
+          {
+            "id": "g_au_root",
+            "nombre": "TrazaAccesoClínico",
+            "tipo_elemento": "Raíz de Agregado",
+            "descripcion": "Registro inmutable por cada lectura clínica o conflicto LWW capturado por interceptor.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Sesión 4",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/auditoria"
+              }
+            ],
+            "x": 2895,
+            "y": 1815
+          },
+          {
+            "id": "g_au_repo",
+            "nombre": "S3ObjectLockRepo",
+            "tipo_elemento": "Repositorio",
+            "descripcion": "Escritura append-only hacia S3 Object Lock en modo compliance sin réplica fuera AWS.",
+            "fuente": "Taller §1-4 · RedSalud Andina · Sesión 4",
+            "metadata": [
+              {
+                "clave": "codigo",
+                "valor": "modules/auditoria"
+              }
+            ],
+            "x": 2895,
+            "y": 1931
+          }
+        ],
+        "aristas": []
+      }
+    ],
+    "big_picture": {
+      "descripcion": "Modelo DDD completo de RedSalud Andina: 3 Subdominios, 9 Contextos Delimitados, Agregados, Mapa de Contexto y Actores.",
+      "nodos": [
+        {
+          "id": "ext_med_rural",
+          "nombre": "Médico Rural",
+          "tipo_elemento": "Actor",
+          "descripcion": "Profesional de centro rural que registra episodios offline y solicita interconsultas.",
+          "fuente": "Taller §1-4 · RedSalud Andina",
+          "x": 40,
+          "y": 416
+        },
+        {
+          "id": "ext_especialista",
+          "nombre": "Especialista",
+          "tipo_elemento": "Actor",
+          "descripcion": "Médico especialista remoto que atiende teleconsultas, consulta historial y firma recetas.",
+          "fuente": "Taller §1-4 · RedSalud Andina",
+          "x": 1780,
+          "y": 60
+        },
+        {
+          "id": "ext_farmacia_kms",
+          "nombre": "Farmacia y AWS KMS",
+          "tipo_elemento": "Sistema Externo",
+          "descripcion": "HSM AWS KMS para firma por contexto y sistema externo de dispensación vía SQS.",
+          "fuente": "Taller §1-4 · RedSalud Andina · Ses. 4",
+          "x": 40,
+          "y": 988
+        },
+        {
+          "id": "ext_app_offline",
+          "nombre": "App Móvil Offline",
+          "tipo_elemento": "Sistema Externo",
+          "descripcion": "Cliente offline-first de borde en 14 centros con cola de salida por agregado.",
+          "fuente": "Taller §1-4 · RedSalud Andina",
+          "x": 40,
+          "y": 1808
+        },
+        {
+          "id": "cm_sync_bridge",
+          "nombre": "C/P Clínica-Sync",
+          "tipo_elemento": "Cliente/Proveedor",
+          "descripcion": "Relación Upstream/Downstream entre Sincronización idempotente y Episodio/Analítica.",
+          "fuente": "Taller §1-4 · RedSalud Andina · Mapa Contexto",
+          "x": 1095,
+          "y": 1493
+        },
+        {
+          "id": "ext_webrtc",
+          "nombre": "Video WebRTC",
+          "tipo_elemento": "Sistema Externo",
+          "descripcion": "Servicio gestionado de señalización y sala de video extraído del monolito modular.",
+          "fuente": "Taller §1-4 · RedSalud Andina · Ses. 1",
+          "x": 2055,
+          "y": 1493
+        },
+        {
+          "id": "ext_oidc",
+          "nombre": "Proveedor OIDC",
+          "tipo_elemento": "Sistema Externo",
+          "descripcion": "Proveedor de identidad externo OAuth2/OIDC emisor de tokens JWT.",
+          "fuente": "RedSalud Andina - Arquitectura",
+          "x": 3720,
+          "y": 488
+        },
+        {
+          "id": "ext_soap",
+          "nombre": "Legado SOAP + BD RO",
+          "tipo_elemento": "Sistema Externo",
+          "descripcion": "Sistema clínico heredado con ventana SOAP nocturna y réplica de solo lectura.",
+          "fuente": "Taller §1-4 · RedSalud Andina · Sesión 2",
+          "x": 3720,
+          "y": 988
+        },
+        {
+          "id": "ext_auditor",
+          "nombre": "Auditor Clínico",
+          "tipo_elemento": "Actor",
+          "descripcion": "Responsable de cumplimiento que consulta trazas reproducibles de acceso clínico.",
+          "fuente": "Taller §1-4 · RedSalud Andina · Obj. 5",
+          "x": 3720,
+          "y": 1883
+        }
+      ],
+      "aristas": [
+        {
+          "fuente": "c_inter_root",
+          "destino": "c_inter_vo",
+          "nombre": "valida"
+        },
+        {
+          "fuente": "c_inter_root",
+          "destino": "c_inter_repo",
+          "nombre": "persiste"
+        },
+        {
+          "fuente": "c_inter_root",
+          "destino": "c_inter_ohs",
+          "nombre": "publica en"
+        },
+        {
+          "fuente": "c_ag_root",
+          "destino": "c_ag_ent",
+          "nombre": "asigna"
+        },
+        {
+          "fuente": "c_ag_root",
+          "destino": "c_ag_repo",
+          "nombre": "persiste @Version"
+        },
+        {
+          "fuente": "c_ag_root",
+          "destino": "c_ag_ohs",
+          "nombre": "expone"
+        },
+        {
+          "fuente": "c_inter_ohs",
+          "destino": "c_ag_root",
+          "nombre": "reserva cupo"
+        },
+        {
+          "fuente": "c_ag_repo",
+          "destino": "c_ep_root",
+          "nombre": "inicia atención"
+        },
+        {
+          "fuente": "c_ep_root",
+          "destino": "c_ep_ent",
+          "nombre": "adjunta KMS"
+        },
+        {
+          "fuente": "c_ep_root",
+          "destino": "c_ep_repo",
+          "nombre": "persiste"
+        },
+        {
+          "fuente": "c_ep_root",
+          "destino": "c_ep_ohs",
+          "nombre": "expone"
+        },
+        {
+          "fuente": "c_ep_root",
+          "destino": "c_rec_root",
+          "nombre": "origina receta"
+        },
+        {
+          "fuente": "c_rec_root",
+          "destino": "c_rec_vo",
+          "nombre": "sella firma"
+        },
+        {
+          "fuente": "c_rec_root",
+          "destino": "c_rec_repo",
+          "nombre": "guarda tx outbox"
+        },
+        {
+          "fuente": "c_rec_root",
+          "destino": "c_rec_pl",
+          "nombre": "publica SQS"
+        },
+        {
+          "fuente": "s_sy_root",
+          "destino": "s_sy_vo",
+          "nombre": "deduplica ULID"
+        },
+        {
+          "fuente": "s_sy_root",
+          "destino": "s_sy_srv",
+          "nombre": "resuelve"
+        },
+        {
+          "fuente": "s_sy_root",
+          "destino": "s_sy_reg",
+          "nombre": "aplica política"
+        },
+        {
+          "fuente": "s_an_root",
+          "destino": "s_an_vista",
+          "nombre": "proyecta KPI"
+        },
+        {
+          "fuente": "s_sy_reg",
+          "destino": "s_an_root",
+          "nombre": "emite métricas"
+        },
+        {
+          "fuente": "g_id_root",
+          "destino": "g_id_srv",
+          "nombre": "evalúa ABAC"
+        },
+        {
+          "fuente": "g_id_root",
+          "destino": "g_id_acl",
+          "nombre": "mapea claims"
+        },
+        {
+          "fuente": "g_leg_root",
+          "destino": "g_leg_repo",
+          "nombre": "cachea TTL"
+        },
+        {
+          "fuente": "g_leg_root",
+          "destino": "g_leg_acl",
+          "nombre": "traduce SOAP"
+        },
+        {
+          "fuente": "g_au_root",
+          "destino": "g_au_repo",
+          "nombre": "graba WORM"
+        },
+        {
+          "fuente": "g_au_root",
+          "destino": "g_au_reg",
+          "nombre": "exige motivo"
+        },
+        {
+          "fuente": "ext_med_rural",
+          "destino": "c_inter_root",
+          "nombre": "solicita"
+        },
+        {
+          "fuente": "ext_app_offline",
+          "destino": "s_sy_root",
+          "nombre": "envía lote ULID"
+        },
+        {
+          "fuente": "c_rec_pl",
+          "destino": "ext_farmacia_kms",
+          "nombre": "firma KMS + SQS"
+        },
+        {
+          "fuente": "ext_especialista",
+          "destino": "c_ag_root",
+          "nombre": "atiende agenda"
+        },
+        {
+          "fuente": "ext_webrtc",
+          "destino": "c_ep_ohs",
+          "nombre": "transmite video"
+        },
+        {
+          "fuente": "s_sy_reg",
+          "destino": "cm_sync_bridge",
+          "nombre": "envía lote"
+        },
+        {
+          "fuente": "cm_sync_bridge",
+          "destino": "c_ep_repo",
+          "nombre": "sincroniza campos"
+        },
+        {
+          "fuente": "c_ag_ohs",
+          "destino": "g_id_srv",
+          "nombre": "autoriza ABAC"
+        },
+        {
+          "fuente": "c_ep_ohs",
+          "destino": "g_leg_root",
+          "nombre": "lee historial RO"
+        },
+        {
+          "fuente": "s_an_vista",
+          "destino": "g_au_root",
+          "nombre": "audita LWW y SLO"
+        },
+        {
+          "fuente": "ext_oidc",
+          "destino": "g_id_acl",
+          "nombre": "emite JWT"
+        },
+        {
+          "fuente": "ext_soap",
+          "destino": "g_leg_acl",
+          "nombre": "responde XML/RO"
+        },
+        {
+          "fuente": "g_au_reg",
+          "destino": "ext_auditor",
+          "nombre": "reporta trazas"
+        }
+      ]
+    }
+  },
+  "vistas": {
+    "customViews": [
+      {
+        "id": "23ad4c61-c15b-5c89-946d-60187c20b547",
+        "name": "01 · Agenda e Interconsulta",
+        "kind": "graph",
+        "notation": "ddd",
+        "graph": {
+          "nombre_proyecto": "01 · Agenda e Interconsulta",
+          "notation": "ddd",
+          "notas": "Subproceso 01: derivación desde centro rural (Interconsulta) + reserva @Version en Agenda sin JOIN cruzado (Taller Sesión 1).",
+          "agregados": [
+            {
+              "nombre_agregado": "Agregado Interconsulta",
+              "tipo_contenedor": "Agregado",
+              "entidad_raiz": "Garantiza transiciones válidas de derivación rural y emite evento para activar Agenda.",
+              "descripcion": "Garantiza transiciones válidas de derivación rural y emite evento para activar Agenda.",
+              "fuente": "Taller Sesión 1 · Módulo Interconsulta",
+              "metadata": [
+                {
+                  "clave": "codigo",
+                  "valor": "modules/interconsulta"
+                }
+              ],
+              "x": 220,
+              "y": 360,
+              "width": 580,
+              "height": 350,
+              "nodos": [
+                {
+                  "id": "s1_root_int",
+                  "nombre": "Interconsulta",
+                  "tipo_elemento": "Raíz de Agregado",
+                  "descripcion": "Raíz con estado de derivación, especialidad solicitada y prioridad.",
+                  "fuente": "Taller §3",
+                  "metadata": [
+                    {
+                      "clave": "codigo",
+                      "valor": "Interconsulta.java"
+                    }
+                  ],
+                  "x": 400,
+                  "y": 413
+                },
+                {
+                  "id": "s1_vo_est",
+                  "nombre": "EstadoDerivación",
+                  "tipo_elemento": "Objeto de Valor",
+                  "descripcion": "Máquina de estados inmutable (Solicitada -> Evaluada -> Agendada).",
+                  "fuente": "Taller §3",
+                  "metadata": [
+                    {
+                      "clave": "codigo",
+                      "valor": "EstadoDerivacion.java"
+                    }
+                  ],
+                  "x": 270,
+                  "y": 543
+                },
+                {
+                  "id": "s1_rep_int",
+                  "nombre": "RepoInterconsultas",
+                  "tipo_elemento": "Repositorio",
+                  "descripcion": "Persiste derivaciones en esquema interconsulta de Aurora PostgreSQL.",
+                  "fuente": "Taller §1",
+                  "metadata": [
+                    {
+                      "clave": "codigo",
+                      "valor": "InterconsultaRepo.java"
+                    }
+                  ],
+                  "x": 530,
+                  "y": 543
+                }
+              ],
+              "aristas": []
+            },
+            {
+              "nombre_agregado": "Agregado CupoCita",
+              "tipo_contenedor": "Agregado",
+              "entidad_raiz": "Controla disponibilidad del especialista con bloqueo optimista @Version sin doble reserva.",
+              "descripcion": "Controla disponibilidad del especialista con bloqueo optimista @Version sin doble reserva.",
+              "fuente": "Taller Sesión 1 y 3 · Módulo Agenda",
+              "metadata": [
+                {
+                  "clave": "codigo",
+                  "valor": "modules/agenda"
+                }
+              ],
+              "x": 1090,
+              "y": 360,
+              "width": 580,
+              "height": 350,
+              "nodos": [
+                {
+                  "id": "s1_root_cupo",
+                  "nombre": "CupoEspecialista",
+                  "tipo_elemento": "Raíz de Agregado",
+                  "descripcion": "Raíz con @Version; rechaza reservas concurrentes sobre el mismo bloque.",
+                  "fuente": "Taller §1.3",
+                  "metadata": [
+                    {
+                      "clave": "codigo",
+                      "valor": "CupoEspecialista.java"
+                    }
+                  ],
+                  "x": 1270,
+                  "y": 413
+                },
+                {
+                  "id": "s1_ent_cita",
+                  "nombre": "CitaTelemedicina",
+                  "tipo_elemento": "Entidad",
+                  "descripcion": "Entidad hija que vincula interconsultaId (UUID), paciente y sala WebRTC.",
+                  "fuente": "RedSalud MER",
+                  "metadata": [
+                    {
+                      "clave": "codigo",
+                      "valor": "CitaTelemedicina.java"
+                    }
+                  ],
+                  "x": 1140,
+                  "y": 543
+                },
+                {
+                  "id": "s1_rep_cupo",
+                  "nombre": "RepoCuposOptimista",
+                  "tipo_elemento": "Repositorio",
+                  "descripcion": "Repositorio JPA del esquema agenda; prohibido @ManyToOne hacia Episodio.",
+                  "fuente": "Taller §1.4",
+                  "metadata": [
+                    {
+                      "clave": "codigo",
+                      "valor": "CupoRepo.java"
+                    }
+                  ],
+                  "x": 1400,
+                  "y": 543
+                }
+              ],
+              "aristas": []
+            }
+          ],
+          "big_picture": {
+            "descripcion": "Flujo Event Storming (arriba) y Agregados tácticos (abajo) para Interconsulta y Agenda sin @ManyToOne.",
+            "nodos": [
+              {
+                "id": "s1_act_med",
+                "nombre": "Médico Rural",
+                "tipo_elemento": "Actor",
+                "descripcion": "Profesional rural que inicia la solicitud de teleinterconsulta.",
+                "fuente": "Taller §3",
+                "x": 110,
+                "y": 128
+              },
+              {
+                "id": "s1_cmd_sol",
+                "nombre": "SolicitarInterconsulta",
+                "tipo_elemento": "Comando",
+                "descripcion": "Comando clínico con UUID cliente, especialidad e historia resumida.",
+                "fuente": "Taller §3",
+                "x": 400,
+                "y": 128
+              },
+              {
+                "id": "s1_ev_sol",
+                "nombre": "InterconsultaSolicitada",
+                "tipo_elemento": "Evento",
+                "descripcion": "Evento de dominio que sustituye el JOIN prohibido entre Agenda y Episodio.",
+                "fuente": "Taller §1 Detonante",
+                "x": 690,
+                "y": 128
+              },
+              {
+                "id": "s1_pol_res",
+                "nombre": "PolíticaReservaCupo",
+                "tipo_elemento": "Política",
+                "descripcion": "Cuando InterconsultaSolicitada entonces dispara comando ReservarCupo.",
+                "fuente": "Taller §1 Detonante",
+                "x": 980,
+                "y": 128
+              },
+              {
+                "id": "s1_cmd_res",
+                "nombre": "ReservarCupo",
+                "tipo_elemento": "Comando",
+                "descripcion": "Comando asíncrono sobre Agenda protegido con Regla Sin Doble Reserva (@Version).",
+                "fuente": "Taller §1",
+                "x": 1270,
+                "y": 128
+              },
+              {
+                "id": "s1_ev_cupo",
+                "nombre": "CupoReservado",
+                "tipo_elemento": "Evento",
+                "descripcion": "Evento emitido al confirmar cita para notificar sala WebRTC y médico.",
+                "fuente": "Taller §1 Detonante",
+                "x": 1560,
+                "y": 128
+              },
+              {
+                "id": "s1_act_esp",
+                "nombre": "Especialista",
+                "tipo_elemento": "Actor",
+                "descripcion": "Recibe notificación de cita confirmada en su agenda teleclínica.",
+                "fuente": "Taller §3",
+                "x": 1850,
+                "y": 128
+              },
+              {
+                "id": "s1_reg_ver",
+                "nombre": "Regla Sin Doble Reserva",
+                "tipo_elemento": "Regla de Negocio",
+                "descripcion": "OptimisticLockException (@Version) ante reserva simultánea en servidor.",
+                "fuente": "Taller §3.4",
+                "x": 920,
+                "y": 413
+              }
+            ],
+            "aristas": [
+              {
+                "fuente": "s1_act_med",
+                "destino": "s1_cmd_sol",
+                "nombre": "ejecuta"
+              },
+              {
+                "fuente": "s1_cmd_sol",
+                "destino": "s1_ev_sol",
+                "nombre": "produce"
+              },
+              {
+                "fuente": "s1_cmd_sol",
+                "destino": "s1_root_int",
+                "nombre": "invoca agregado"
+              },
+              {
+                "fuente": "s1_root_int",
+                "destino": "s1_vo_est",
+                "nombre": "valida estado"
+              },
+              {
+                "fuente": "s1_root_int",
+                "destino": "s1_rep_int",
+                "nombre": "persiste"
+              },
+              {
+                "fuente": "s1_ev_sol",
+                "destino": "s1_pol_res",
+                "nombre": "activa"
+              },
+              {
+                "fuente": "s1_pol_res",
+                "destino": "s1_cmd_res",
+                "nombre": "emite"
+              },
+              {
+                "fuente": "s1_cmd_res",
+                "destino": "s1_ev_cupo",
+                "nombre": "produce"
+              },
+              {
+                "fuente": "s1_cmd_res",
+                "destino": "s1_root_cupo",
+                "nombre": "invoca agregado"
+              },
+              {
+                "fuente": "s1_reg_ver",
+                "destino": "s1_root_cupo",
+                "nombre": "restringe @Version"
+              },
+              {
+                "fuente": "s1_root_cupo",
+                "destino": "s1_ent_cita",
+                "nombre": "crea cita"
+              },
+              {
+                "fuente": "s1_root_cupo",
+                "destino": "s1_rep_cupo",
+                "nombre": "guarda tx"
+              },
+              {
+                "fuente": "s1_ev_cupo",
+                "destino": "s1_act_esp",
+                "nombre": "notifica"
+              }
+            ]
+          }
+        },
+        "createdAt": "2026-11-24T22:30:00.000Z"
+      },
+      {
+        "id": "59df5126-ee12-5b42-a8c0-7bd6e2cf12f2",
+        "name": "02 · Episodio y Sync Offline",
+        "kind": "graph",
+        "notation": "ddd",
+        "graph": {
+          "nombre_proyecto": "02 · Episodio y Sync Offline",
+          "notation": "ddd",
+          "notas": "Subproceso 02 (Sesión 3): POST /sync/episodios idempotente con ULID, LWW por campo asistencial y adjuntos S3 KMS.",
+          "agregados": [
+            {
+              "nombre_agregado": "Agregado LoteSync",
+              "tipo_contenedor": "Agregado",
+              "entidad_raiz": "Garantiza idempotencia en BD ante triples reintentos y resuelve colisiones offline.",
+              "descripcion": "Garantiza idempotencia en BD ante triples reintentos y resuelve colisiones offline.",
+              "fuente": "Taller Sesión 3 · Módulo Sincronización",
+              "metadata": [
+                {
+                  "clave": "codigo",
+                  "valor": "modules/sincronizacion"
+                }
+              ],
+              "x": 220,
+              "y": 360,
+              "width": 580,
+              "height": 350,
+              "nodos": [
+                {
+                  "id": "s2_root_lote",
+                  "nombre": "LoteSincronización",
+                  "tipo_elemento": "Raíz de Agregado",
+                  "descripcion": "Raíz ordenada por agregado; responde reproduciblemente ante reintentos.",
+                  "fuente": "Taller §3.3",
+                  "metadata": [
+                    {
+                      "clave": "codigo",
+                      "valor": "LoteSync.java"
+                    }
+                  ],
+                  "x": 400,
+                  "y": 413
+                },
+                {
+                  "id": "s2_vo_key",
+                  "nombre": "ClaveIdempotencia",
+                  "tipo_elemento": "Objeto de Valor",
+                  "descripcion": "ULID cliente + timestamp rural con UNIQUE KEY persistida en Aurora.",
+                  "fuente": "Taller §3.2",
+                  "metadata": [
+                    {
+                      "clave": "codigo",
+                      "valor": "IdempotencyKey.java"
+                    }
+                  ],
+                  "x": 270,
+                  "y": 543
+                },
+                {
+                  "id": "s2_srv_res",
+                  "nombre": "ResolutorConflictos",
+                  "tipo_elemento": "Servicio de Dominio",
+                  "descripcion": "LWW por campo en asistencial (audita ambos) y rechazo en cupo/receta.",
+                  "fuente": "Taller §3.4",
+                  "metadata": [
+                    {
+                      "clave": "codigo",
+                      "valor": "ConflictResolver.java"
+                    }
+                  ],
+                  "x": 530,
+                  "y": 543
+                }
+              ],
+              "aristas": []
+            },
+            {
+              "nombre_agregado": "Agregado Episodio",
+              "tipo_contenedor": "Agregado",
+              "entidad_raiz": "Consolida evolución clínica y adjuntos S3 cifrados por clave KMS dedicada.",
+              "descripcion": "Consolida evolución clínica y adjuntos S3 cifrados por clave KMS dedicada.",
+              "fuente": "Taller Sesión 1 y 4 · Módulo Episodio",
+              "metadata": [
+                {
+                  "clave": "codigo",
+                  "valor": "modules/episodio"
+                }
+              ],
+              "x": 1090,
+              "y": 360,
+              "width": 580,
+              "height": 350,
+              "nodos": [
+                {
+                  "id": "s2_root_ep",
+                  "nombre": "EpisodioClínico",
+                  "tipo_elemento": "Raíz de Agregado",
+                  "descripcion": "Raíz identificada por UUID cliente con vector de timestamps por campo.",
+                  "fuente": "Taller §3",
+                  "metadata": [
+                    {
+                      "clave": "codigo",
+                      "valor": "Episodio.java"
+                    }
+                  ],
+                  "x": 1270,
+                  "y": 413
+                },
+                {
+                  "id": "s2_ent_adj",
+                  "nombre": "AdjuntoCifradoS3",
+                  "tipo_elemento": "Entidad",
+                  "descripcion": "Referencia S3 en región única cifrada con KMS; sin réplicas externas.",
+                  "fuente": "Taller §4.2",
+                  "metadata": [
+                    {
+                      "clave": "codigo",
+                      "valor": "AdjuntoClinico.java"
+                    }
+                  ],
+                  "x": 1140,
+                  "y": 543
+                },
+                {
+                  "id": "s2_rep_ep",
+                  "nombre": "RepoEpisodios",
+                  "tipo_elemento": "Repositorio",
+                  "descripcion": "Repositorio Aurora Flyway del esquema episodio + publicación de conflicto.",
+                  "fuente": "Taller §1.3",
+                  "metadata": [
+                    {
+                      "clave": "codigo",
+                      "valor": "EpisodioRepo.java"
+                    }
+                  ],
+                  "x": 1400,
+                  "y": 543
+                }
+              ],
+              "aristas": []
+            }
+          ],
+          "big_picture": {
+            "descripcion": "POST /sync/episodios idempotente (ULID) hacia Episodio Clínico, resolución LWW/rechazo y SLA ≤ 15 min.",
+            "nodos": [
+              {
+                "id": "s2_ext_app",
+                "nombre": "App Móvil Offline",
+                "tipo_elemento": "Sistema Externo",
+                "descripcion": "Encola operaciones en 14 centros (5 a 2 Mbps) con ULID generado en borde.",
+                "fuente": "Taller §3.1",
+                "x": 110,
+                "y": 128
+              },
+              {
+                "id": "s2_cmd_sync",
+                "nombre": "EnviarLoteSync",
+                "tipo_elemento": "Comando",
+                "descripcion": "POST /sync/episodios con Idempotency-Key reintentado en orden alterado.",
+                "fuente": "Taller §3.2",
+                "x": 400,
+                "y": 128
+              },
+              {
+                "id": "s2_ev_lote",
+                "nombre": "LoteValidado",
+                "tipo_elemento": "Evento",
+                "descripcion": "Lote nuevo aceptado o respuesta cacheada idempotente ante reintento.",
+                "fuente": "Taller §3.2",
+                "x": 690,
+                "y": 128
+              },
+              {
+                "id": "s2_pol_conf",
+                "nombre": "PolíticaConflicto",
+                "tipo_elemento": "Política",
+                "descripcion": "Cuando LoteValidado con colisión entonces aplica LWW o rechaza en servidor.",
+                "fuente": "Taller §3.4",
+                "x": 980,
+                "y": 128
+              },
+              {
+                "id": "s2_cmd_ep",
+                "nombre": "GuardarEpisodio",
+                "tipo_elemento": "Comando",
+                "descripcion": "Consolida campos ganados por timestamp dentro de EpisodioClínico.",
+                "fuente": "Taller §3.4",
+                "x": 1270,
+                "y": 128
+              },
+              {
+                "id": "s2_ev_sync",
+                "nombre": "EpisodioSincronizado",
+                "tipo_elemento": "Evento",
+                "descripcion": "Sincronización completa en ≤ 15 min post-reconexión y 0 pérdida.",
+                "fuente": "Taller §3.5",
+                "x": 1560,
+                "y": 128
+              },
+              {
+                "id": "s2_vis_slo",
+                "nombre": "Vista Conflicto Auditado",
+                "tipo_elemento": "Vista",
+                "descripcion": "Expone ambos valores de conflicto asistencial a Auditoría y métricas.",
+                "fuente": "Taller §3.4",
+                "x": 1850,
+                "y": 128
+              }
+            ],
+            "aristas": [
+              {
+                "fuente": "s2_ext_app",
+                "destino": "s2_cmd_sync",
+                "nombre": "reintenta x3"
+              },
+              {
+                "fuente": "s2_cmd_sync",
+                "destino": "s2_ev_lote",
+                "nombre": "produce"
+              },
+              {
+                "fuente": "s2_cmd_sync",
+                "destino": "s2_root_lote",
+                "nombre": "invoca agregado"
+              },
+              {
+                "fuente": "s2_root_lote",
+                "destino": "s2_vo_key",
+                "nombre": "valida clave única"
+              },
+              {
+                "fuente": "s2_root_lote",
+                "destino": "s2_srv_res",
+                "nombre": "resuelve LWW"
+              },
+              {
+                "fuente": "s2_ev_lote",
+                "destino": "s2_pol_conf",
+                "nombre": "activa"
+              },
+              {
+                "fuente": "s2_pol_conf",
+                "destino": "s2_cmd_ep",
+                "nombre": "emite"
+              },
+              {
+                "fuente": "s2_cmd_ep",
+                "destino": "s2_ev_sync",
+                "nombre": "produce"
+              },
+              {
+                "fuente": "s2_cmd_ep",
+                "destino": "s2_root_ep",
+                "nombre": "invoca agregado"
+              },
+              {
+                "fuente": "s2_root_ep",
+                "destino": "s2_ent_adj",
+                "nombre": "cifra S3 KMS"
+              },
+              {
+                "fuente": "s2_root_ep",
+                "destino": "s2_rep_ep",
+                "nombre": "persiste"
+              },
+              {
+                "fuente": "s2_ev_sync",
+                "destino": "s2_vis_slo",
+                "nombre": "proyecta SLA ≤15m"
+              }
+            ]
+          }
+        },
+        "createdAt": "2026-11-24T22:30:00.000Z"
+      },
+      {
+        "id": "d37069ac-dce2-57c0-8ccc-f2d49b168475",
+        "name": "03 · Receta, KMS y Outbox",
+        "kind": "graph",
+        "notation": "ddd",
+        "graph": {
+          "nombre_proyecto": "03 · Receta, KMS y Outbox",
+          "notation": "ddd",
+          "notas": "Subproceso 03 (Sesiones 3 y 4): firma AWS KMS con rotación, commit atómico Receta+Outbox en Aurora y despacho ordenado SQS.",
+          "agregados": [
+            {
+              "nombre_agregado": "Agregado Receta",
+              "tipo_contenedor": "Agregado",
+              "entidad_raiz": "Valida prescripción, sella firma KMS y persiste outbox dentro de la misma tx en Aurora.",
+              "descripcion": "Valida prescripción, sella firma KMS y persiste outbox dentro de la misma tx en Aurora.",
+              "fuente": "Taller Ses. 3 y 4 · Módulo Receta",
+              "metadata": [
+                {
+                  "clave": "codigo",
+                  "valor": "modules/receta"
+                }
+              ],
+              "x": 220,
+              "y": 360,
+              "width": 580,
+              "height": 350,
+              "nodos": [
+                {
+                  "id": "s3_root_rec",
+                  "nombre": "RecetaMédica",
+                  "tipo_elemento": "Raíz de Agregado",
+                  "descripcion": "Raíz inmutable post-firma KMS; rechaza conflictos offline en servidor.",
+                  "fuente": "Taller §3.4",
+                  "metadata": [
+                    {
+                      "clave": "codigo",
+                      "valor": "Receta.java"
+                    }
+                  ],
+                  "x": 400,
+                  "y": 413
+                },
+                {
+                  "id": "s3_vo_firma",
+                  "nombre": "FirmaKMS SHA",
+                  "tipo_elemento": "Objeto de Valor",
+                  "descripcion": "Hash SHA-256 + keyId rotado por contexto devuelto por AWS KMS.",
+                  "fuente": "Taller §4.2",
+                  "metadata": [
+                    {
+                      "clave": "codigo",
+                      "valor": "FirmaKms.java"
+                    }
+                  ],
+                  "x": 270,
+                  "y": 543
+                },
+                {
+                  "id": "s3_rep_out",
+                  "nombre": "RepoRecetaOutbox",
+                  "tipo_elemento": "Repositorio",
+                  "descripcion": "Commit atómico único: guarda Receta y fila outbox en Aurora PostgreSQL.",
+                  "fuente": "Taller §3.3",
+                  "metadata": [
+                    {
+                      "clave": "codigo",
+                      "valor": "RecetaOutboxRepo.java"
+                    }
+                  ],
+                  "x": 530,
+                  "y": 543
+                }
+              ],
+              "aristas": []
+            },
+            {
+              "nombre_agregado": "Agregado OutboxRelay",
+              "tipo_contenedor": "Agregado",
+              "entidad_raiz": "Garantiza entrega al-menos-una-vez en orden por agregado hacia SQS FIFO.",
+              "descripcion": "Garantiza entrega al-menos-una-vez en orden por agregado hacia SQS FIFO.",
+              "fuente": "Taller Sesión 3 · Transactional Outbox",
+              "metadata": [
+                {
+                  "clave": "codigo",
+                  "valor": "modules/receta/outbox"
+                }
+              ],
+              "x": 1120,
+              "y": 365,
+              "width": 520,
+              "height": 340,
+              "nodos": [
+                {
+                  "id": "s3_root_out",
+                  "nombre": "MensajeOutbox",
+                  "tipo_elemento": "Raíz de Agregado",
+                  "descripcion": "Entrada outbox con estado PENDIENTE/ENVIADO e idempotencia por recetaId.",
+                  "fuente": "Taller §3.3",
+                  "metadata": [
+                    {
+                      "clave": "codigo",
+                      "valor": "OutboxEntry.java"
+                    }
+                  ],
+                  "x": 1270,
+                  "y": 413
+                },
+                {
+                  "id": "s3_srv_sqs",
+                  "nombre": "PublicadorSQSFIFO",
+                  "tipo_elemento": "Servicio de Dominio",
+                  "descripcion": "Reintenta con backoff exponencial respetando MessageGroupId por agregado.",
+                  "fuente": "Taller §3.3",
+                  "metadata": [
+                    {
+                      "clave": "codigo",
+                      "valor": "SqsOutboxRelay.java"
+                    }
+                  ],
+                  "x": 1270,
+                  "y": 543
+                }
+              ],
+              "aristas": []
+            }
+          ],
+          "big_picture": {
+            "descripcion": "Flujo Event Storming y patrón Transactional Outbox + firma AWS KMS para recetas electrónicas.",
+            "nodos": [
+              {
+                "id": "s3_act_esp",
+                "nombre": "Especialista",
+                "tipo_elemento": "Actor",
+                "descripcion": "Prescribe medicación en centro autorizado tras evaluar teleconsulta.",
+                "fuente": "Taller §4.1",
+                "x": 110,
+                "y": 128
+              },
+              {
+                "id": "s3_cmd_emit",
+                "nombre": "EmitirReceta",
+                "tipo_elemento": "Comando",
+                "descripcion": "Comando validado con posología, cie10 y solicitud de firma KMS.",
+                "fuente": "Taller §3",
+                "x": 400,
+                "y": 128
+              },
+              {
+                "id": "s3_ev_sell",
+                "nombre": "RecetaSelladaOutbox",
+                "tipo_elemento": "Evento",
+                "descripcion": "Evento sellado tras commit atómico conjunto receta + outbox en Aurora.",
+                "fuente": "Taller §3.3",
+                "x": 690,
+                "y": 128
+              },
+              {
+                "id": "s3_pol_sqs",
+                "nombre": "PolíticaDespachoSQS",
+                "tipo_elemento": "Política",
+                "descripcion": "Cuando RecetaSelladaOutbox entonces ejecuta PublicarMensajeSQS para garantizar entrega ordenada sin acoplar tx.",
+                "fuente": "Taller §3.3",
+                "x": 980,
+                "y": 128
+              },
+              {
+                "id": "s3_cmd_pub",
+                "nombre": "PublicarMensajeSQS",
+                "tipo_elemento": "Comando",
+                "descripcion": "Lee filas pendientes en orden por agregado sin perder eventos ante caídas.",
+                "fuente": "Taller §3.3",
+                "x": 1270,
+                "y": 128
+              },
+              {
+                "id": "s3_ev_env",
+                "nombre": "RecetaEnviadaFarmacia",
+                "tipo_elemento": "Evento",
+                "descripcion": "Confirmación de entrega asíncrona en cola SQS hacia dispensación.",
+                "fuente": "Taller §3 Arq.",
+                "x": 1560,
+                "y": 128
+              },
+              {
+                "id": "s3_ext_farm",
+                "nombre": "Farmacia Dispensación",
+                "tipo_elemento": "Sistema Externo",
+                "descripcion": "Sistema externo que consume mensaje SQS y verifica firma SHA.",
+                "fuente": "Taller §3 Arq.",
+                "x": 1850,
+                "y": 128
+              },
+              {
+                "id": "s3_ext_kms",
+                "nombre": "AWS KMS HSM",
+                "tipo_elemento": "Sistema Externo",
+                "descripcion": "Clave KMS por contexto en región AWS única con rotación automática.",
+                "fuente": "Taller §4.2",
+                "x": 270,
+                "y": 748
+              }
+            ],
+            "aristas": [
+              {
+                "fuente": "s3_act_esp",
+                "destino": "s3_cmd_emit",
+                "nombre": "ejecuta"
+              },
+              {
+                "fuente": "s3_cmd_emit",
+                "destino": "s3_ev_sell",
+                "nombre": "produce"
+              },
+              {
+                "fuente": "s3_cmd_emit",
+                "destino": "s3_root_rec",
+                "nombre": "invoca agregado"
+              },
+              {
+                "fuente": "s3_root_rec",
+                "destino": "s3_vo_firma",
+                "nombre": "sella hash"
+              },
+              {
+                "fuente": "s3_vo_firma",
+                "destino": "s3_ext_kms",
+                "nombre": "firma con clave"
+              },
+              {
+                "fuente": "s3_root_rec",
+                "destino": "s3_rep_out",
+                "nombre": "guarda tx atómica"
+              },
+              {
+                "fuente": "s3_ev_sell",
+                "destino": "s3_pol_sqs",
+                "nombre": "activa"
+              },
+              {
+                "fuente": "s3_pol_sqs",
+                "destino": "s3_cmd_pub",
+                "nombre": "emite"
+              },
+              {
+                "fuente": "s3_cmd_pub",
+                "destino": "s3_ev_env",
+                "nombre": "produce"
+              },
+              {
+                "fuente": "s3_cmd_pub",
+                "destino": "s3_root_out",
+                "nombre": "procesa outbox"
+              },
+              {
+                "fuente": "s3_root_out",
+                "destino": "s3_srv_sqs",
+                "nombre": "despacha FIFO"
+              },
+              {
+                "fuente": "s3_ev_env",
+                "destino": "s3_ext_farm",
+                "nombre": "entrega a"
+              }
+            ]
+          }
+        },
+        "createdAt": "2026-11-24T22:30:00.000Z"
+      },
+      {
+        "id": "b5b738a5-8036-5d96-b20f-143dd40ba35d",
+        "name": "04 · ACL Legado y Auditoría",
+        "kind": "graph",
+        "notation": "ddd",
+        "graph": {
+          "nombre_proyecto": "04 · ACL Legado y Auditoría",
+          "notation": "ddd",
+          "notas": "Subproceso 04 (Sesiones 2 y 4): ACL SOAP + caché L1/L2 (p95 ≤ 2s / fallback ≤ 6s) y auditoría append-only S3 Object Lock WORM.",
+          "agregados": [
+            {
+              "nombre_agregado": "Agregado HistorialVista",
+              "tipo_contenedor": "Agregado",
+              "entidad_raiz": "Read model propio con TTL visible (X-Data-Freshness) que tolera caída del legado SOAP.",
+              "descripcion": "Read model propio con TTL visible (X-Data-Freshness) que tolera caída del legado SOAP.",
+              "fuente": "Taller Sesión 2 · Integración Legado",
+              "metadata": [
+                {
+                  "clave": "codigo",
+                  "valor": "modules/legado-acl"
+                }
+              ],
+              "x": 220,
+              "y": 360,
+              "width": 580,
+              "height": 350,
+              "nodos": [
+                {
+                  "id": "s4_root_hist",
+                  "nombre": "HistorialCanónico",
+                  "tipo_elemento": "Raíz de Agregado",
+                  "descripcion": "Modelo canónico protegido contra el esquema XML heredado.",
+                  "fuente": "Taller §2.5",
+                  "metadata": [
+                    {
+                      "clave": "codigo",
+                      "valor": "HistorialCanonico.java"
+                    }
+                  ],
+                  "x": 400,
+                  "y": 413
+                },
+                {
+                  "id": "s4_rep_cache",
+                  "nombre": "CacheTwoLevelRepo",
+                  "tipo_elemento": "Repositorio",
+                  "descripcion": "Caffeine L1 + ElastiCache L2 con fallback ≤ 6 s si falla SOAP.",
+                  "fuente": "Taller §2.3",
+                  "metadata": [
+                    {
+                      "clave": "codigo",
+                      "valor": "HistorialCacheRepo.java"
+                    }
+                  ],
+                  "x": 270,
+                  "y": 543
+                },
+                {
+                  "id": "s4_srv_abac",
+                  "nombre": "AutorizadorABAC",
+                  "tipo_elemento": "Servicio de Dominio",
+                  "descripcion": "@PreAuthorize en servicio por rol, centro y relación; deniega rol admin.",
+                  "fuente": "Taller §4.1",
+                  "metadata": [
+                    {
+                      "clave": "codigo",
+                      "valor": "ClinicalAuthzManager.java"
+                    }
+                  ],
+                  "x": 530,
+                  "y": 543
+                }
+              ],
+              "aristas": []
+            },
+            {
+              "nombre_agregado": "Agregado TrazaAcceso",
+              "tipo_contenedor": "Agregado",
+              "entidad_raiz": "Bitácora inmutable append-only de cada lectura clínica o rechazo de acceso.",
+              "descripcion": "Bitácora inmutable append-only de cada lectura clínica o rechazo de acceso.",
+              "fuente": "Taller Sesión 4 · Auditoría",
+              "metadata": [
+                {
+                  "clave": "codigo",
+                  "valor": "modules/auditoria"
+                }
+              ],
+              "x": 1120,
+              "y": 365,
+              "width": 520,
+              "height": 340,
+              "nodos": [
+                {
+                  "id": "s4_root_aud",
+                  "nombre": "TrazaAccesoClínico",
+                  "tipo_elemento": "Raíz de Agregado",
+                  "descripcion": "Responde quién vio qué documento, cuándo y con qué motivo asistencial.",
+                  "fuente": "Taller §4.3",
+                  "metadata": [
+                    {
+                      "clave": "codigo",
+                      "valor": "TrazaAcceso.java"
+                    }
+                  ],
+                  "x": 1270,
+                  "y": 413
+                },
+                {
+                  "id": "s4_rep_worm",
+                  "nombre": "S3ObjectLockRepo",
+                  "tipo_elemento": "Repositorio",
+                  "descripcion": "S3 Object Lock compliance sin DELETE/UPDATE ni réplica fuera AWS.",
+                  "fuente": "Taller §4.3",
+                  "metadata": [
+                    {
+                      "clave": "codigo",
+                      "valor": "AuditWormRepo.java"
+                    }
+                  ],
+                  "x": 1270,
+                  "y": 543
+                }
+              ],
+              "aristas": []
+            }
+          ],
+          "big_picture": {
+            "descripcion": "Consulta protegida por ABAC y ACL SOAP con caché de frescura, interceptada hacia auditoría inmutable WORM.",
+            "nodos": [
+              {
+                "id": "s4_act_esp",
+                "nombre": "Especialista",
+                "tipo_elemento": "Actor",
+                "descripcion": "Médico con atributos verificados (rol clínico, centro y paciente asignado).",
+                "fuente": "Taller §4.1",
+                "x": 110,
+                "y": 128
+              },
+              {
+                "id": "s4_cmd_cons",
+                "nombre": "ConsultarHistorial",
+                "tipo_elemento": "Comando",
+                "descripcion": "GET /historial/{id} con motivo clínico obligatorio y chequeo ABAC.",
+                "fuente": "Taller §2.3",
+                "x": 400,
+                "y": 128
+              },
+              {
+                "id": "s4_ev_lect",
+                "nombre": "LecturaAuditada",
+                "tipo_elemento": "Evento",
+                "descripcion": "Evento emitido tras leer desde caché o fallback del adaptador ACL.",
+                "fuente": "Taller §4.3",
+                "x": 690,
+                "y": 128
+              },
+              {
+                "id": "s4_pol_aud",
+                "nombre": "PolíticaTrazabilidad",
+                "tipo_elemento": "Política",
+                "descripcion": "Cuando LecturaAuditada entonces dispara registro WORM append-only.",
+                "fuente": "Taller §4.3",
+                "x": 980,
+                "y": 128
+              },
+              {
+                "id": "s4_cmd_aud",
+                "nombre": "RegistrarTrazaWORM",
+                "tipo_elemento": "Comando",
+                "descripcion": "Persiste traza firmada antes de cerrar auditoría de lectura clínica.",
+                "fuente": "Taller §4.3",
+                "x": 1270,
+                "y": 128
+              },
+              {
+                "id": "s4_ev_worm",
+                "nombre": "TrazaGrabadaWORM",
+                "tipo_elemento": "Evento",
+                "descripcion": "Confirmación inmutable en S3 Object Lock disponible para inspección.",
+                "fuente": "Taller §4.3",
+                "x": 1560,
+                "y": 128
+              },
+              {
+                "id": "s4_act_aud",
+                "nombre": "Auditor Clínico",
+                "tipo_elemento": "Actor",
+                "descripcion": "Verifica prueba reproducible de quién vio cada historia clínica.",
+                "fuente": "Taller §2 Obj. 5",
+                "x": 1850,
+                "y": 128
+              },
+              {
+                "id": "s4_acl_soap",
+                "nombre": "ACL SOAP Nocturno",
+                "tipo_elemento": "Capa Anticorrupción (ACL)",
+                "descripcion": "Implementa puerto HistorialClinicoPort con WebServiceTemplate y Circuit Breaker Resilience4j para aislar XML legado.",
+                "fuente": "Taller §2.2",
+                "metadata": [
+                  {
+                    "clave": "codigo",
+                    "valor": "SoapLegacyAdapter.java"
+                  }
+                ],
+                "x": 830,
+                "y": 413
+              },
+              {
+                "id": "s4_ext_soap",
+                "nombre": "Legado SOAP + BD RO",
+                "tipo_elemento": "Sistema Externo",
+                "descripcion": "Fuente heredada nocturna; protegida con timeout y degradación ≤ 6s.",
+                "fuente": "Taller §2.1",
+                "x": 830,
+                "y": 553
+              }
+            ],
+            "aristas": [
+              {
+                "fuente": "s4_act_esp",
+                "destino": "s4_cmd_cons",
+                "nombre": "ejecuta"
+              },
+              {
+                "fuente": "s4_cmd_cons",
+                "destino": "s4_ev_lect",
+                "nombre": "produce"
+              },
+              {
+                "fuente": "s4_cmd_cons",
+                "destino": "s4_root_hist",
+                "nombre": "consulta modelo"
+              },
+              {
+                "fuente": "s4_root_hist",
+                "destino": "s4_rep_cache",
+                "nombre": "lee caché TTL"
+              },
+              {
+                "fuente": "s4_root_hist",
+                "destino": "s4_srv_abac",
+                "nombre": "exige ABAC"
+              },
+              {
+                "fuente": "s4_root_hist",
+                "destino": "s4_acl_soap",
+                "nombre": "usa puerto ACL"
+              },
+              {
+                "fuente": "s4_acl_soap",
+                "destino": "s4_ext_soap",
+                "nombre": "llama con CB"
+              },
+              {
+                "fuente": "s4_ev_lect",
+                "destino": "s4_pol_aud",
+                "nombre": "activa"
+              },
+              {
+                "fuente": "s4_pol_aud",
+                "destino": "s4_cmd_aud",
+                "nombre": "emite"
+              },
+              {
+                "fuente": "s4_cmd_aud",
+                "destino": "s4_ev_worm",
+                "nombre": "produce"
+              },
+              {
+                "fuente": "s4_cmd_aud",
+                "destino": "s4_root_aud",
+                "nombre": "invoca agregado"
+              },
+              {
+                "fuente": "s4_root_aud",
+                "destino": "s4_rep_worm",
+                "nombre": "graba compliance"
+              },
+              {
+                "fuente": "s4_ev_worm",
+                "destino": "s4_act_aud",
+                "nombre": "reporta"
+              }
+            ]
+          }
+        },
+        "createdAt": "2026-11-24T22:30:00.000Z"
+      }
+    ],
+    "activeViewId": null,
+    "injectedViewIds": [],
+    "openViewIds": []
+  },
+  "compartido": {
+    "references": [],
+    "agent": {
+      "versions": [],
+      "lineages": [],
+      "artifacts": []
+    },
+    "analysis": {}
+  }
+}

@@ -1,0 +1,30 @@
+flowchart LR
+  subgraph Agregado_Receta["Agregado Receta<br/><i>Agregado</i>"]
+    s3_root_rec(("RecetaMédica<br/><i>Raíz de Agregado</i>"))
+    s3_vo_firma(("FirmaKMS SHA<br/><i>Objeto de Valor</i>"))
+    s3_rep_out(("RepoRecetaOutbox<br/><i>Repositorio</i>"))
+  end
+  subgraph Agregado_OutboxRelay["Agregado OutboxRelay<br/><i>Agregado</i>"]
+    s3_root_out(("MensajeOutbox<br/><i>Raíz de Agregado</i>"))
+    s3_srv_sqs(("PublicadorSQSFIFO<br/><i>Servicio de Dominio</i>"))
+  end
+  s3_act_esp("Especialista<br/><i>Actor</i>")
+  s3_cmd_emit(("EmitirReceta<br/><i>Comando</i>"))
+  s3_ev_sell(("RecetaSelladaOutbox<br/><i>Evento</i>"))
+  s3_pol_sqs(("PolíticaDespachoSQS<br/><i>Política</i>"))
+  s3_cmd_pub(("PublicarMensajeSQS<br/><i>Comando</i>"))
+  s3_ev_env(("RecetaEnviadaFarmacia<br/><i>Evento</i>"))
+  s3_ext_farm("Farmacia Dispensación<br/><i>Sistema Externo</i>")
+  s3_ext_kms("AWS KMS HSM<br/><i>Sistema Externo</i>")
+  s3_act_esp -->|"ejecuta"| s3_cmd_emit
+  s3_cmd_emit -->|"produce"| s3_ev_sell
+  s3_cmd_emit -->|"invoca agregado"| s3_root_rec
+  s3_root_rec -->|"sella hash"| s3_vo_firma
+  s3_vo_firma -->|"firma con clave"| s3_ext_kms
+  s3_root_rec -->|"guarda tx atómica"| s3_rep_out
+  s3_ev_sell -->|"activa"| s3_pol_sqs
+  s3_pol_sqs -->|"emite"| s3_cmd_pub
+  s3_cmd_pub -->|"produce"| s3_ev_env
+  s3_cmd_pub -->|"procesa outbox"| s3_root_out
+  s3_root_out -->|"despacha FIFO"| s3_srv_sqs
+  s3_ev_env -->|"entrega a"| s3_ext_farm
