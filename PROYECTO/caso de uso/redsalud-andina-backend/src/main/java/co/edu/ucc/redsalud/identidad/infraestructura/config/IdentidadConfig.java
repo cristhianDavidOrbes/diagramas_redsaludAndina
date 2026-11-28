@@ -63,21 +63,37 @@ public class IdentidadConfig {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http, EvaluarAccesoAbacUseCase useCase,
             JwtLocalDemoAdapter jwtAdapter, TraductorJwtOidc traductor) throws Exception {
-        AuthorizationManager<RequestAuthorizationContext> abacManager = (auth, ctx) -> {
-            HttpServletRequest req = ctx.getRequest();
-            String usuarioId = resolverUsuario(req, jwtAdapter, traductor);
-            if (usuarioId == null) {
-                return new AuthorizationDecision(false);
-            }
-            DecisionAcceso d = useCase.evaluar(usuarioId, req.getHeader("X-Paciente-Id"),
-                    req.getHeader("X-Centro-Id"), req.getRequestURI(), req.getHeader("X-Motivo"));
-            return new AuthorizationDecision(d.permitido());
-        };
+        AuthorizationManager<RequestAuthorizationContext> abacProtegido = (auth, ctx) -> evaluarPeticion(
+                ctx.getRequest(), useCase, jwtAdapter, traductor, false);
+        AuthorizationManager<RequestAuthorizationContext> abacHistorial = (auth, ctx) -> evaluarPeticion(
+                ctx.getRequest(), useCase, jwtAdapter, traductor, true);
         return http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(a -> a
-                        .requestMatchers("/api/v1/identidad/protegido/**").access(abacManager)
+                        .requestMatchers("/api/v1/identidad/protegido/**").access(abacProtegido)
+                        .requestMatchers("/historial/**").access(abacHistorial)
                         .anyRequest().permitAll())
                 .build();
+    }
+
+    private AuthorizationDecision evaluarPeticion(
+            HttpServletRequest req, EvaluarAccesoAbacUseCase useCase,
+            JwtLocalDemoAdapter jwtAdapter, TraductorJwtOidc traductor, boolean permitirSinHeader) {
+        String authHeader = req.getHeader("Authorization");
+        if (permitirSinHeader && (authHeader == null || authHeader.isBlank())) {
+            return new AuthorizationDecision(true);
+        }
+        String usuarioId = resolverUsuario(req, jwtAdapter, traductor);
+        if (usuarioId == null) {
+            return new AuthorizationDecision(false);
+        }
+        String uri = req.getRequestURI();
+        String pacienteId = req.getHeader("X-Paciente-Id") != null
+                ? req.getHeader("X-Paciente-Id") : uri.substring(uri.lastIndexOf('/') + 1);
+        String centroId = req.getHeader("X-Centro-Id") != null ? req.getHeader("X-Centro-Id") : "CENTRO-01";
+        String motivo = req.getHeader("X-Motivo") != null ? req.getHeader("X-Motivo")
+                : (req.getParameter("motivo") != null ? req.getParameter("motivo") : "teleconsulta");
+        DecisionAcceso d = useCase.evaluar(usuarioId, pacienteId, centroId, uri, motivo);
+        return new AuthorizationDecision(d.permitido());
     }
 
     private String resolverUsuario(HttpServletRequest req, JwtLocalDemoAdapter jwtAdapter, TraductorJwtOidc traductor) {

@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/analitica")
 public class AnaliticaController {
 
     private final ConsultarIndicadoresUseCase useCase;
@@ -20,12 +19,12 @@ public class AnaliticaController {
         this.useCase = useCase;
     }
 
-    @PostMapping("/metricas")
+    @PostMapping({"/tablero", "/api/v1/analitica/metricas"})
     public ResponseEntity<MetricaCentro> registrar(@RequestBody MetricaCentro metrica) {
         return ResponseEntity.ok(useCase.registrar(metrica));
     }
 
-    @GetMapping("/tablero")
+    @GetMapping({"/tablero", "/api/v1/analitica/tablero"})
     public ResponseEntity<TableroAdopcion> tablero() {
         return ResponseEntity.ok(useCase.obtenerTablero());
     }

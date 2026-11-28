@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/auditoria")
 public class AuditoriaController {
 
     private final AuditarAccesoUseCase useCase;
@@ -22,13 +21,13 @@ public class AuditoriaController {
         this.useCase = useCase;
     }
 
-    @PostMapping("/trazas")
+    @PostMapping({"/auditoria", "/api/v1/auditoria/trazas"})
     public ResponseEntity<TrazaAccesoClinico> registrar(@RequestBody TrazaRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED).body(useCase.registrar(
                 req.usuarioId(), req.rol(), req.recursoId(), req.motivo(), req.permitido(), req.centroId()));
     }
 
-    @GetMapping("/reporte/{recursoId}")
+    @GetMapping({"/auditoria/{recursoId}", "/api/v1/auditoria/reporte/{recursoId}"})
     public ResponseEntity<ReporteAuditoria> reporte(@PathVariable String recursoId) {
         return ResponseEntity.ok(useCase.generarReporte(recursoId));
     }

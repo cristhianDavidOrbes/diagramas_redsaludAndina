@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/identidad")
 public class IdentidadController {
 
     private final EvaluarAccesoAbacUseCase useCase;
@@ -27,19 +26,19 @@ public class IdentidadController {
         this.emisorToken = emisorToken;
     }
 
-    @PostMapping("/token")
+    @PostMapping({"/auth/token", "/api/v1/identidad/token"})
     public ResponseEntity<Map<String, String>> emitirToken(@RequestBody TokenRequest req) {
         String jwt = emisorToken.emitirToken(req.usuarioId());
         return ResponseEntity.ok(Map.of("token", jwt, "tipo", "Bearer", "algoritmo", "RS256"));
     }
 
-    @PostMapping("/evaluar")
+    @PostMapping("/api/v1/identidad/evaluar")
     public ResponseEntity<DecisionAcceso> evaluar(@RequestBody EvaluacionRequest req) {
         return ResponseEntity.ok(useCase.exigirAccesoClinico(
                 req.usuarioId(), req.pacienteId(), req.centroRecurso(), req.recursoId(), req.motivo()));
     }
 
-    @GetMapping("/protegido/{recursoId}")
+    @GetMapping("/api/v1/identidad/protegido/{recursoId}")
     public ResponseEntity<Map<String, String>> recursoProtegido(@PathVariable String recursoId) {
         return ResponseEntity.ok(Map.of("recursoId", recursoId, "estado", "AUTORIZADO_ABAC"));
     }

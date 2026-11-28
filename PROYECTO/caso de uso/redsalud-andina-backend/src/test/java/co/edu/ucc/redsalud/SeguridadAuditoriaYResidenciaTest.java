@@ -132,6 +132,12 @@ class SeguridadAuditoriaYResidenciaTest {
                         .header("X-Centro-Id", "CENTRO-01")
                         .header("X-Motivo", "consulta"))
                 .andExpect(status().isForbidden());
+
+        // Endpoint real corto: /auth/token + GET /historial/PAC-001 con Bearer sin headers extra
+        mockMvc.perform(get("/historial/PAC-001").header("Authorization", "Bearer " + jwtMed))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/historial/PAC-001").header("Authorization", "Bearer " + jwtAdmin))
+                .andExpect(status().isForbidden());
     }
 
     @Test
