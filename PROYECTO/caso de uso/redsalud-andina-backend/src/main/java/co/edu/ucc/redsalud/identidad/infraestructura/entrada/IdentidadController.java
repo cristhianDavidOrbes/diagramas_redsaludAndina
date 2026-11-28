@@ -1,5 +1,6 @@
 package co.edu.ucc.redsalud.identidad.infraestructura.entrada;
 
+import co.edu.ucc.redsalud.identidad.aplicacion.puertos.entrada.EmitirTokenDemoUseCase;
 import co.edu.ucc.redsalud.identidad.aplicacion.puertos.entrada.EvaluarAccesoAbacUseCase;
 import co.edu.ucc.redsalud.identidad.dominio.DecisionAcceso;
 import co.edu.ucc.redsalud.identidad.dominio.IdentidadException;
@@ -19,9 +20,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class IdentidadController {
 
     private final EvaluarAccesoAbacUseCase useCase;
+    private final EmitirTokenDemoUseCase emisorToken;
 
-    public IdentidadController(EvaluarAccesoAbacUseCase useCase) {
+    public IdentidadController(EvaluarAccesoAbacUseCase useCase, EmitirTokenDemoUseCase emisorToken) {
         this.useCase = useCase;
+        this.emisorToken = emisorToken;
+    }
+
+    @PostMapping("/token")
+    public ResponseEntity<Map<String, String>> emitirToken(@RequestBody TokenRequest req) {
+        String jwt = emisorToken.emitirToken(req.usuarioId());
+        return ResponseEntity.ok(Map.of("token", jwt, "tipo", "Bearer", "algoritmo", "RS256"));
     }
 
     @PostMapping("/evaluar")
@@ -40,6 +49,7 @@ public class IdentidadController {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
     }
 
+    public record TokenRequest(String usuarioId) {}
     public record EvaluacionRequest(String usuarioId, String pacienteId, String centroRecurso,
                                     String recursoId, String motivo) {}
 }

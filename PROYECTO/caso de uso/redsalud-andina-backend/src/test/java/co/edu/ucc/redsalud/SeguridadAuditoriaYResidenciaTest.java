@@ -31,6 +31,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -90,6 +91,47 @@ class SeguridadAuditoriaYResidenciaTest {
         assertThat(principal.usuarioId()).isEqualTo("ESP-9");
         assertThat(principal.rol()).isEqualTo(RolUsuario.ESPECIALISTA);
         assertThat(principal.pacientesAsignados()).contains("PAC-10");
+    }
+
+    @Test
+    void emiteTokenJwtRs256YValidaBearerConAbac() throws Exception {
+        String respMed = mockMvc.perform(post("/api/v1/identidad/token")
+                        .contentType("application/json")
+                        .content("{\"usuarioId\":\"MED-RURAL-1\"}"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String jwtMed = respMed.replaceAll(".*\"token\":\"([^\"]+)\".*", "$1");
+        assertThat(jwtMed.split("\\.")).hasSize(3);
+
+        mockMvc.perform(get("/api/v1/identidad/protegido/HIST-PAC-001")
+                        .header("Authorization", "Bearer " + jwtMed)
+                        .header("X-Paciente-Id", "PAC-001")
+                        .header("X-Centro-Id", "CENTRO-01")
+                        .header("X-Motivo", "teleconsulta"))
+                .andExpect(status().isOk());
+
+        // Token alterado falla la verificación criptográfica RS256 -> 403
+        mockMvc.perform(get("/api/v1/identidad/protegido/HIST-PAC-001")
+                        .header("Authorization", "Bearer " + jwtMed + "X")
+                        .header("X-Paciente-Id", "PAC-001")
+                        .header("X-Centro-Id", "CENTRO-01")
+                        .header("X-Motivo", "teleconsulta"))
+                .andExpect(status().isForbidden());
+
+        String respAdmin = mockMvc.perform(post("/api/v1/identidad/token")
+                        .contentType("application/json")
+                        .content("{\"usuarioId\":\"ADMIN-1\"}"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String jwtAdmin = respAdmin.replaceAll(".*\"token\":\"([^\"]+)\".*", "$1");
+
+        // Token válido de ADMIN-1 pero sin rol clínico -> 403 ABAC
+        mockMvc.perform(get("/api/v1/identidad/protegido/HIST-PAC-001")
+                        .header("Authorization", "Bearer " + jwtAdmin)
+                        .header("X-Paciente-Id", "PAC-001")
+                        .header("X-Centro-Id", "CENTRO-01")
+                        .header("X-Motivo", "consulta"))
+                .andExpect(status().isForbidden());
     }
 
     @Test
