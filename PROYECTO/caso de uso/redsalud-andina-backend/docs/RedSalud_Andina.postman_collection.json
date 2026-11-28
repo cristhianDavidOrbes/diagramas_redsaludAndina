@@ -1,0 +1,156 @@
+{
+  "info": {
+    "name": "RedSalud Andina — TODOS los Endpoints (9 Módulos + Actuator)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "tokenMed", "value": "" },
+    { "key": "tokenAdmin", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Identidad (JWT + ABAC)",
+      "item": [
+        {
+          "name": "POST /auth/token (MED-RURAL-1 -> 200)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.collectionVariables.set('tokenMed', pm.response.json().token);"] } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"usuarioId\": \"MED-RURAL-1\"\n}" }, "url": "{{baseUrl}}/auth/token" }
+        },
+        {
+          "name": "POST /auth/token (ADMIN-1 -> 200)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.collectionVariables.set('tokenAdmin', pm.response.json().token);"] } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"usuarioId\": \"ADMIN-1\"\n}" }, "url": "{{baseUrl}}/auth/token" }
+        },
+        {
+          "name": "POST /api/v1/identidad/evaluar (MED-RURAL-1 -> 200 / ADMIN-1 -> 403)",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"usuarioId\": \"MED-RURAL-1\",\n  \"pacienteId\": \"PAC-001\",\n  \"centroRecurso\": \"CENTRO-01\",\n  \"recursoId\": \"PAC-001\",\n  \"motivo\": \"teleconsulta\"\n}" }, "url": "{{baseUrl}}/api/v1/identidad/evaluar" }
+        }
+      ]
+    },
+    {
+      "name": "2. Legado (ACL + Caché + ABAC)",
+      "item": [
+        {
+          "name": "GET /historial/PAC-001 con JWT Médico (200 + X-Data-Freshness)",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{tokenMed}}", "type": "string" }] }, "url": "{{baseUrl}}/historial/PAC-001?motivo=teleconsulta" }
+        },
+        {
+          "name": "GET /historial/PAC-001 con JWT Admin (403 ABAC)",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{tokenAdmin}}", "type": "string" }] }, "url": "{{baseUrl}}/historial/PAC-001?motivo=consulta" }
+        }
+      ]
+    },
+    {
+      "name": "3. Interconsulta (Máquina de estados)",
+      "item": [
+        {
+          "name": "POST /api/v1/interconsultas (201 SOLICITADA)",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"interconsultaId\": \"INT-1\",\n  \"pacienteId\": \"PAC-001\",\n  \"centroOrigenId\": \"CENTRO-01\",\n  \"especialidad\": \"CARDIOLOGIA\"\n}" }, "url": "{{baseUrl}}/api/v1/interconsultas" }
+        },
+        {
+          "name": "PATCH /api/v1/interconsultas/INT-1/estado/AGENDADA (200)",
+          "request": { "method": "PATCH", "url": "{{baseUrl}}/api/v1/interconsultas/INT-1/estado/AGENDADA" }
+        },
+        {
+          "name": "PATCH /api/v1/interconsultas/INT-1/estado/ATENDIDA (200)",
+          "request": { "method": "PATCH", "url": "{{baseUrl}}/api/v1/interconsultas/INT-1/estado/ATENDIDA" }
+        },
+        {
+          "name": "PATCH /api/v1/interconsultas/INT-1/estado/CERRADA (200)",
+          "request": { "method": "PATCH", "url": "{{baseUrl}}/api/v1/interconsultas/INT-1/estado/CERRADA" }
+        }
+      ]
+    },
+    {
+      "name": "4. Agenda (Cupos sin doble reserva)",
+      "item": [
+        {
+          "name": "POST /api/v1/agenda/cupos (201)",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"cupoId\": \"CUPO-1\",\n  \"especialistaId\": \"ESP-CARD-1\",\n  \"centroId\": \"CENTRO-01\",\n  \"fechaHora\": \"2026-11-28T15:00:00Z\"\n}" }, "url": "{{baseUrl}}/api/v1/agenda/cupos" }
+        },
+        {
+          "name": "POST /api/v1/agenda/cupos/CUPO-1/reservar (200 -> 2a vez 409)",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"pacienteId\": \"PAC-001\",\n  \"interconsultaId\": \"INT-1\"\n}" }, "url": "{{baseUrl}}/api/v1/agenda/cupos/CUPO-1/reservar" }
+        }
+      ]
+    },
+    {
+      "name": "5. Episodio Clínico + Adjunto KMS",
+      "item": [
+        {
+          "name": "POST /api/v1/episodios (201)",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"episodioId\": \"EP-1\",\n  \"pacienteId\": \"PAC-001\",\n  \"centroId\": \"CENTRO-01\",\n  \"notaEvolucion\": \"Evolución favorable\",\n  \"signosVitales\": \"TA 120/80\"\n}" }, "url": "{{baseUrl}}/api/v1/episodios" }
+        },
+        {
+          "name": "POST /api/v1/episodios/EP-1/adjuntos (200 KMS + región única)",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"nombreArchivo\": \"rx-torax.pdf\",\n  \"contenidoBase64\": \"ZGVtbw==\"\n}" }, "url": "{{baseUrl}}/api/v1/episodios/EP-1/adjuntos" }
+        }
+      ]
+    },
+    {
+      "name": "6. Receta Firmada KMS + Farmacia",
+      "item": [
+        {
+          "name": "POST /api/v1/recetas (201 firma SHA-256 + enviadaFarmacia)",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"recetaId\": \"REC-1\",\n  \"episodioId\": \"EP-1\",\n  \"pacienteId\": \"PAC-001\",\n  \"especialistaId\": \"ESP-CARD-1\",\n  \"medicamentos\": \"Losartan 50mg cada 12h\"\n}" }, "url": "{{baseUrl}}/api/v1/recetas" }
+        }
+      ]
+    },
+    {
+      "name": "7. Sincronización Offline + Idempotencia + Conflictos",
+      "item": [
+        {
+          "name": "POST /sync/episodios - Nota (201 -> 2a vez 200 duplicado)",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Idempotency-Key", "value": "ULID-01" }], "body": { "mode": "raw", "raw": "{\n  \"agregadoId\": \"EP-1\",\n  \"tipo\": \"NOTA_EVOLUCION\",\n  \"campo\": \"notaEvolucion\",\n  \"valorEntrante\": \"Paciente estable\",\n  \"selloTiempoCentro\": \"2026-11-28T10:00:00Z\"\n}" }, "url": "{{baseUrl}}/sync/episodios" }
+        },
+        {
+          "name": "POST /sync/episodios - Conflicto LWW doble valor (201)",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Idempotency-Key", "value": "ULID-02" }], "body": { "mode": "raw", "raw": "{\n  \"agregadoId\": \"EP-1\",\n  \"tipo\": \"NOTA_EVOLUCION\",\n  \"campo\": \"notaEvolucion\",\n  \"valorEntrante\": \"Fiebre 38.5C\",\n  \"selloTiempoCentro\": \"2026-11-28T10:05:00Z\",\n  \"valorPrevio\": \"Afebril 36.8C\",\n  \"selloTiempoPrevio\": \"2026-11-28T10:00:00Z\"\n}" }, "url": "{{baseUrl}}/sync/episodios" }
+        },
+        {
+          "name": "POST /sync/episodios - Cupo offline rechazado (409)",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Idempotency-Key", "value": "ULID-03" }], "body": { "mode": "raw", "raw": "{\n  \"agregadoId\": \"CUPO-1\",\n  \"tipo\": \"RESERVA_CUPO\",\n  \"campo\": \"reserva\",\n  \"valorEntrante\": \"PAC-001\",\n  \"selloTiempoCentro\": \"2026-11-28T10:10:00Z\"\n}" }, "url": "{{baseUrl}}/sync/episodios" }
+        }
+      ]
+    },
+    {
+      "name": "8. Auditoría SHA-256 + Reporte",
+      "item": [
+        {
+          "name": "POST /auditoria (201)",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"usuarioId\": \"MED-RURAL-1\",\n  \"rol\": \"MEDICO_RURAL\",\n  \"recursoId\": \"PAC-001\",\n  \"motivo\": \"teleconsulta\",\n  \"permitido\": true,\n  \"centroId\": \"CENTRO-01\"\n}" }, "url": "{{baseUrl}}/auditoria" }
+        },
+        {
+          "name": "GET /auditoria/PAC-001 (200 reporte)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/auditoria/PAC-001" }
+        }
+      ]
+    },
+    {
+      "name": "9. Analítica SLO + Actuator",
+      "item": [
+        {
+          "name": "POST /tablero (registrar métrica centro -> 200)",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"centroId\": \"CENTRO-02\",\n  \"teleconsultas\": 30,\n  \"disponibilidadPct\": 99.8,\n  \"p95SyncMinutos\": 5.2\n}" }, "url": "{{baseUrl}}/tablero" }
+        },
+        {
+          "name": "GET /tablero (200 SLO global)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/tablero" }
+        },
+        {
+          "name": "GET /actuator/health (200 UP)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/actuator/health" }
+        },
+        {
+          "name": "GET /actuator/metrics (200)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/actuator/metrics" }
+        },
+        {
+          "name": "GET /actuator/prometheus (200)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/actuator/prometheus" }
+        }
+      ]
+    }
+  ]
+}

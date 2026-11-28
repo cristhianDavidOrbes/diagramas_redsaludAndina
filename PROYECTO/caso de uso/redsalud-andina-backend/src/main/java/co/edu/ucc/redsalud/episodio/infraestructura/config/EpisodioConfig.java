@@ -8,6 +8,7 @@ import co.edu.ucc.redsalud.episodio.infraestructura.salida.aws.S3AdjuntoKmsAdapt
 import co.edu.ucc.redsalud.episodio.infraestructura.salida.jpa.EpisodioJpaAdapter;
 import co.edu.ucc.redsalud.episodio.infraestructura.salida.jpa.EpisodioJpaRepository;
 import co.edu.ucc.redsalud.episodio.infraestructura.salida.memoria.EpisodioMemoriaAdapter;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,11 +38,13 @@ public class EpisodioConfig {
     @Bean
     @Profile("postgres")
     public AdjuntoStoragePort s3AdjuntoStoragePort(
-            S3Client s3,
+            ObjectProvider<S3Client> s3Provider,
             @Value("${redsalud.aws.s3-adjuntos-bucket}") String bucket,
             @Value("${redsalud.aws.kms-key-id}") String kmsKeyId,
             @Value("${redsalud.region-permitida}") String region) {
-        return new S3AdjuntoKmsAdapter(s3, bucket, kmsKeyId, region);
+        S3Client s3 = s3Provider.getIfAvailable();
+        return s3 != null ? new S3AdjuntoKmsAdapter(s3, bucket, kmsKeyId, region)
+                : new EpisodioMemoriaAdapter(kmsKeyId, region);
     }
 
     @Bean

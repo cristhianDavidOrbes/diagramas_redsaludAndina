@@ -36,8 +36,9 @@ public class AuditoriaConfig {
     @Bean
     @Profile("postgres")
     public ArchivoWormPort s3ObjectLockWormAdapter(
-            S3Client s3, @Value("${redsalud.aws.s3-auditoria-bucket}") String bucket) {
-        return new S3ObjectLockWormAdapter(s3, bucket);
+            ObjectProvider<S3Client> s3Provider, @Value("${redsalud.aws.s3-auditoria-bucket}") String bucket) {
+        S3Client s3 = s3Provider.getIfAvailable();
+        return s3 != null ? new S3ObjectLockWormAdapter(s3, bucket) : new AuditoriaMemoriaAdapter();
     }
 
     @Bean

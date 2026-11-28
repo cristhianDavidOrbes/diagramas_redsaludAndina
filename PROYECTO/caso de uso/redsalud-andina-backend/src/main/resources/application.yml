@@ -69,13 +69,25 @@ spring:
   config:
     activate:
       on-profile: postgres
+  autoconfigure:
+    exclude:
+      - org.springframework.modulith.events.jpa.JpaEventPublicationAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration
+      - io.awspring.cloud.autoconfigure.core.AwsAutoConfiguration
+      - io.awspring.cloud.autoconfigure.core.CredentialsProviderAutoConfiguration
+      - io.awspring.cloud.autoconfigure.core.RegionProviderAutoConfiguration
+      - io.awspring.cloud.autoconfigure.s3.S3AutoConfiguration
+      - io.awspring.cloud.autoconfigure.sqs.SqsAutoConfiguration
   datasource:
-    url: jdbc:postgresql://localhost:5432/redsalud
-    username: redsalud
-    password: redsalud_dev
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/redsalud}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASS:postgres}
   jpa:
     hibernate:
       ddl-auto: validate
+    show-sql: true
   flyway:
     enabled: true
     schemas:
@@ -89,19 +101,3 @@ spring:
       - auditoria
       - sincronizacion
       - analitica
-  data:
-    redis:
-      host: localhost
-      port: 6379
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${OAUTH2_ISSUER_URI:https://auth.redsaludandina.local/realms/teleconsulta}
-  cloud:
-    aws:
-      region:
-        static: us-east-1
-      credentials:
-        access-key: ${AWS_ACCESS_KEY_ID:test}
-        secret-key: ${AWS_SECRET_ACCESS_KEY:test}

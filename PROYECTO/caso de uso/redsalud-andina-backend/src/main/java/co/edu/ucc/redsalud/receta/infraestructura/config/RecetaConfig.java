@@ -9,6 +9,7 @@ import co.edu.ucc.redsalud.receta.infraestructura.salida.aws.SqsFarmaciaAdapter;
 import co.edu.ucc.redsalud.receta.infraestructura.salida.jpa.RecetaJpaAdapter;
 import co.edu.ucc.redsalud.receta.infraestructura.salida.jpa.RecetaJpaRepository;
 import co.edu.ucc.redsalud.receta.infraestructura.salida.memoria.RecetaMemoriaAdapter;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,11 +33,22 @@ public class RecetaConfig {
 
     @Bean
     @Profile("postgres")
-    public SqsFarmaciaAdapter sqsFarmaciaAdapter(
-            SqsAsyncClient sqs,
+    public FirmadorKmsPort firmadorKmsPort(
+            ObjectProvider<SqsAsyncClient> sqsProvider,
             @Value("${redsalud.aws.sqs-recetas-fifo}") String queueUrl,
             @Value("${redsalud.aws.kms-key-id}") String kmsKeyId) {
-        return new SqsFarmaciaAdapter(sqs, queueUrl, kmsKeyId);
+        SqsAsyncClient sqs = sqsProvider.getIfAvailable();
+        return sqs != null ? new SqsFarmaciaAdapter(sqs, queueUrl, kmsKeyId) : new RecetaMemoriaAdapter(kmsKeyId);
+    }
+
+    @Bean
+    @Profile("postgres")
+    public DespachoFarmaciaPort despachoFarmaciaPort(
+            ObjectProvider<SqsAsyncClient> sqsProvider,
+            @Value("${redsalud.aws.sqs-recetas-fifo}") String queueUrl,
+            @Value("${redsalud.aws.kms-key-id}") String kmsKeyId) {
+        SqsAsyncClient sqs = sqsProvider.getIfAvailable();
+        return sqs != null ? new SqsFarmaciaAdapter(sqs, queueUrl, kmsKeyId) : new RecetaMemoriaAdapter(kmsKeyId);
     }
 
     @Bean

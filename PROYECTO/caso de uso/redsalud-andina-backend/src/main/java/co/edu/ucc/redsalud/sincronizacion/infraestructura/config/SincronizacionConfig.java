@@ -41,8 +41,9 @@ public class SincronizacionConfig {
     @Bean
     @Profile("postgres")
     public PublicadorOutboxPort sqsFifoOutboxAdapter(
-            SqsAsyncClient sqs, @Value("${redsalud.aws.sqs-sync-fifo}") String queueUrl) {
-        return new SqsFifoOutboxAdapter(sqs, queueUrl);
+            ObjectProvider<SqsAsyncClient> sqsProvider, @Value("${redsalud.aws.sqs-sync-fifo}") String queueUrl) {
+        SqsAsyncClient sqs = sqsProvider.getIfAvailable();
+        return sqs != null ? new SqsFifoOutboxAdapter(sqs, queueUrl) : new SincronizacionMemoriaAdapter();
     }
 
     @Bean
