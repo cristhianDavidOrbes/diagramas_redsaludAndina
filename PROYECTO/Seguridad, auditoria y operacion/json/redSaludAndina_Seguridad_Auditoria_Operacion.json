@@ -3,13 +3,13 @@
   "proyecto": {
     "nombre_proyecto": "redSaludAndina_Seguridad_Auditoria_Operacion",
     "notation": "c4",
-    "notas": "# Sesión 4 — Seguridad, Auditoría Demostrable y Operación\nResidencia única en una sola región AWS sin réplicas ni backups externos (ADR-004 y ADR-005).\nSeguridad: OAuth2 Resource Server + Cognito + perfiles DynamoDB; autorización ABAC (@PreAuthorize + AuthorizationManager) por rol, centro, especialidad y relación con paciente en capa de servicio (no solo UI ni controlador).\nCifrado: TLS en tránsito + AWS KMS con claves por contexto y rotación; bucket S3 sin replicación cross-region.\nAuditoría demostrable: 100 % de lecturas clínicas y 100 % de denegaciones registradas en S3 Object Lock (Compliance) + reporte reproducible 'quién vio este documento y con qué motivo'.\nOperación: Micrometer + OpenTelemetry + Actuator + Prometheus (SLO 99,5 % mensual) + CI/CD con IaC y rollback <= 10 min.",
+    "notas": "# Sesión 4 — Seguridad, Auditoría Demostrable y Operación\nResidencia única en una sola región AWS sin réplicas ni backups externos (ADR-004 y ADR-005).\n1) Asignación de roles: Admin de Red / TI aprovisiona usuarios, roles (MEDICO_RURAL, ESPECIALISTA, AUDITOR, ADMIN) y atributos (centro, especialidad) en Amazon Cognito + DynamoDB Perfiles.\n2) Autenticación (AuthN): el usuario inicia sesión con OIDC + MFA en Amazon Cognito, que emite un JWT firmado; el backend (OAuth2 Resource Server / ACL) valida la firma JWKS y traduce los claims a PrincipalClínico.\n3) Autorización (AuthZ): Autorizador ABAC (@PreAuthorize + AuthorizationManager) en capa de servicio decide permitir o denegar (403) según rol clínico, centro, especialidad, relación con paciente y motivo.\n4) Cifrado y auditoría demostrable: TLS + AWS KMS (sin réplicas externas), 100 % de lecturas y denegaciones en S3 Object Lock (Compliance) + reporte reproducible + Micrometer/OTel (SLO 99,5 %).",
     "agregados": [
       {
         "nombre_agregado": "Región AWS Única · Seguridad, Auditoría y Operación",
         "tipo_contenedor": "Límite de Contenedor",
-        "entidad_raiz": "Garantiza residencia de datos por diseño, evaluación ABAC en el punto de acceso al dato y observabilidad integral.",
-        "descripcion": "Garantiza residencia de datos por diseño, evaluación ABAC en el punto de acceso al dato y observabilidad integral.",
+        "entidad_raiz": "Garantiza residencia de datos por diseño, verificación JWT en frontera, autorización ABAC en servicio y observabilidad integral.",
+        "descripcion": "Garantiza residencia de datos por diseño, verificación JWT en frontera, autorización ABAC en servicio y observabilidad integral.",
         "fuente": "Sesión 4 · Bloques 4.1–4.5",
         "metadata": [
           {
@@ -18,7 +18,7 @@
           }
         ],
         "x": 340,
-        "y": 250,
+        "y": 260,
         "width": 1120,
         "height": 500,
         "nodos": [
@@ -26,7 +26,7 @@
             "id": "sec_oauth",
             "nombre": "OAuth2 Resource Server (ACL)",
             "tipo_elemento": "Componente",
-            "descripcion": "Valida JWT emitido por Cognito y traduce claims externos a PrincipalClínico sin acoplar el dominio.",
+            "descripcion": "Valida firma JWT contra JWKS de Cognito (AuthN en backend) y traduce claims externos a PrincipalClínico sin acoplar el dominio.",
             "fuente": "Bloque 4.1 · RF-01",
             "metadata": [
               {
@@ -45,7 +45,7 @@
             "id": "sec_abac",
             "nombre": "Autorizador ABAC (Servicio)",
             "tipo_elemento": "Componente",
-            "descripcion": "@PreAuthorize + AuthorizationManager propio: evalúa rol, centro, especialidad y relación con el paciente.",
+            "descripcion": "Autorización (AuthZ) con @PreAuthorize + AuthorizationManager: evalúa rol clínico, centro, especialidad, relación con paciente y motivo.",
             "fuente": "Bloque 4.1",
             "metadata": [
               {
@@ -96,7 +96,7 @@
               }
             ],
             "x": 580,
-            "y": 578
+            "y": 588
           },
           {
             "id": "sec_rep",
@@ -115,21 +115,40 @@
               }
             ],
             "x": 1150,
-            "y": 578
+            "y": 588
           }
         ],
         "aristas": []
       }
     ],
     "big_picture": {
-      "descripcion": "Arquitectura de Seguridad ABAC, Cifrado KMS, Auditoría Inmutable S3 Object Lock y Operación Cloud-Native.",
+      "descripcion": "Flujo completo: Asignación de roles (Admin TI) → Autenticación OIDC/MFA (Cognito JWT) → Autorización ABAC (Servicio) → Auditoría WORM.",
       "hotspots": [],
       "nodos": [
+        {
+          "id": "sec_admin_red",
+          "nombre": "Admin de Red / TI",
+          "tipo_elemento": "Persona",
+          "descripcion": "Aprovisiona usuarios y asigna roles (MEDICO_RURAL, ESPECIALISTA, AUDITOR, ADMIN) y atributos de centro/especialidad en Cognito y Perfiles.",
+          "fuente": "Gobernanza IAM · RF-01",
+          "metadata": [
+            {
+              "clave": "repo",
+              "valor": "https://github.com/cristhianDavidOrbes/diagramas_redsaludAndina"
+            },
+            {
+              "clave": "puerto",
+              "valor": "8080"
+            }
+          ],
+          "x": 30,
+          "y": 28
+        },
         {
           "id": "sec_usr",
           "nombre": "Usuario Clínico / Admin",
           "tipo_elemento": "Persona",
-          "descripcion": "Rol clínico autorizado accede con motivo; rol administrativo recibe 403 denegado y auditado.",
+          "descripcion": "Se autentica con OIDC + MFA en Cognito para obtener JWT; rol clínico autorizado accede con motivo y rol ADMIN recibe 403 auditado.",
           "fuente": "Ejercicio Detonante §4",
           "metadata": [
             {
@@ -148,7 +167,7 @@
           "id": "sec_cog",
           "nombre": "Cognito + DynamoDB Perfiles",
           "tipo_elemento": "Sistema Externo",
-          "descripcion": "Proveedor OIDC y atributos de centro, especialidad y rol con consistencia fuerte.",
+          "descripcion": "Proveedor de identidad (IdP OIDC + MFA): autentica credenciales, emite JWT firmado y almacena roles, centro y especialidad.",
           "fuente": "Análisis §2 · RF-01",
           "metadata": [
             {
@@ -161,7 +180,7 @@
             }
           ],
           "x": 390,
-          "y": 58
+          "y": 28
         },
         {
           "id": "sec_kms",
@@ -180,7 +199,7 @@
             }
           ],
           "x": 770,
-          "y": 58
+          "y": 28
         },
         {
           "id": "sec_worm",
@@ -199,7 +218,7 @@
             }
           ],
           "x": 1600,
-          "y": 448
+          "y": 458
         },
         {
           "id": "sec_aud_actor",
@@ -218,7 +237,7 @@
             }
           ],
           "x": 1150,
-          "y": 838
+          "y": 848
         },
         {
           "id": "sec_cicd",
@@ -237,24 +256,34 @@
             }
           ],
           "x": 580,
-          "y": 838
+          "y": 848
         }
       ],
       "aristas": [
         {
-          "fuente": "sec_usr",
-          "destino": "sec_oauth",
-          "descripcion": "HTTPS + JWT [TLS]"
+          "fuente": "sec_admin_red",
+          "destino": "sec_cog",
+          "descripcion": "1. Asigna roles y centro"
         },
         {
-          "fuente": "sec_oauth",
-          "destino": "sec_abac",
-          "descripcion": "PrincipalClínico"
+          "fuente": "sec_usr",
+          "destino": "sec_cog",
+          "descripcion": "2. Autentica OIDC+MFA (JWT)"
+        },
+        {
+          "fuente": "sec_usr",
+          "destino": "sec_oauth",
+          "descripcion": "3. HTTPS + Bearer JWT [TLS]"
         },
         {
           "fuente": "sec_oauth",
           "destino": "sec_cog",
-          "descripcion": "Valida token y atributos"
+          "descripcion": "4. Valida firma JWKS y perfil"
+        },
+        {
+          "fuente": "sec_oauth",
+          "destino": "sec_abac",
+          "descripcion": "5. PrincipalClínico"
         },
         {
           "fuente": "sec_abac",
@@ -264,7 +293,7 @@
         {
           "fuente": "sec_abac",
           "destino": "sec_int",
-          "descripcion": "Permite/deniega auditado"
+          "descripcion": "6. Permite/deniega 403"
         },
         {
           "fuente": "sec_int",
@@ -299,13 +328,13 @@
         "graph": {
           "nombre_proyecto": "DDD · SesiónABAC, TrazaAcceso y SLO",
           "notation": "ddd",
-          "notas": "Event Storming y modelo táctico DDD de Seguridad ABAC, Auditoría WORM y Analítica SLO (Sesión 4 · ADR-004/005).",
+          "notas": "Event Storming y modelo táctico DDD de Gestión de Roles (Admin TI), Autenticación OIDC/MFA (Cognito → ACL JWT), Autorización ABAC en servicio (@PreAuthorize + AuthorizationManager) y Auditoría WORM (Sesión 4 · ADR-004/005).",
           "agregados": [
             {
               "nombre_agregado": "Agregado SesiónABAC",
               "tipo_contenedor": "Agregado",
-              "entidad_raiz": "Evalúa autorización por rol y atributos en capa de servicio.",
-              "descripcion": "Evalúa autorización por rol y atributos en capa de servicio.",
+              "entidad_raiz": "Recibe identidad autenticada vía ACL OIDC/JWT y evalúa autorización ABAC por rol y atributos en capa de servicio.",
+              "descripcion": "Recibe identidad autenticada vía ACL OIDC/JWT y evalúa autorización ABAC por rol y atributos en capa de servicio.",
               "fuente": "Bloque 4.1 · Identidad",
               "metadata": [
                 {
@@ -322,7 +351,7 @@
                   "id": "sd_id",
                   "nombre": "PrincipalClínico",
                   "tipo_elemento": "Raíz de Agregado",
-                  "descripcion": "Identidad con rol, centro rural y especialidades.",
+                  "descripcion": "Identidad ya autenticada con rol asignado por Admin TI, centro rural, especialidad y pacientes.",
                   "fuente": "RF-01",
                   "x": 380,
                   "y": 378
@@ -331,7 +360,7 @@
                   "id": "sd_abac",
                   "nombre": "AutorizadorABAC",
                   "tipo_elemento": "Servicio de Dominio",
-                  "descripcion": "Policy @PreAuthorize + AuthorizationManager por centro y paciente.",
+                  "descripcion": "Autorización en servicio (@PreAuthorize + AuthorizationManager) por rol clínico, centro, paciente y motivo.",
                   "fuente": "Bloque 4.1",
                   "x": 240,
                   "y": 518
@@ -340,7 +369,7 @@
                   "id": "sd_acl",
                   "nombre": "ACL OIDC / OAuth2",
                   "tipo_elemento": "Capa Anticorrupción (ACL)",
-                  "descripcion": "Traduce JWT de Cognito a modelo interno.",
+                  "descripcion": "Valida firma JWT (JWKS de Cognito) y traduce claims autenticados a PrincipalClínico.",
                   "fuente": "Bloque 4.1",
                   "x": 520,
                   "y": 518
@@ -369,7 +398,7 @@
                   "id": "sd_traza",
                   "nombre": "TrazaAccesoClínico",
                   "tipo_elemento": "Raíz de Agregado",
-                  "descripcion": "Usuario, fecha, recurso, motivo y decisión (permitido/denegado).",
+                  "descripcion": "Usuario, fecha, recurso, motivo, cadena SHA-256 y decisión (permitido/denegado).",
                   "fuente": "RF-08",
                   "x": 1040,
                   "y": 378
@@ -397,14 +426,14 @@
             }
           ],
           "big_picture": {
-            "descripcion": "Event Storming de denegación auditada y generación de reporte reproducible.",
+            "descripcion": "Event Storming: aprovisionamiento de roles, autenticación OIDC/JWT, denegación ABAC auditada y reporte reproducible.",
             "hotspots": [],
             "nodos": [
               {
                 "id": "sd_act",
                 "nombre": "Usuario Sin Rol Clínico",
                 "tipo_elemento": "Actor",
-                "descripcion": "Perfil administrativo sin permisos clínicos que intenta consultar una historia clínica.",
+                "descripcion": "Perfil administrativo autenticado con JWT válido de Cognito pero sin rol clínico que intenta leer una historia.",
                 "fuente": "Bloque 4.1",
                 "x": 30,
                 "y": 93
@@ -413,7 +442,7 @@
                 "id": "sd_cmd1",
                 "nombre": "SolicitarLecturaClínica",
                 "tipo_elemento": "Comando",
-                "descripcion": "Invoca lectura en capa de servicio evaluando política ABAC por rol, centro y relación asistencial.",
+                "descripcion": "Recibe Bearer JWT, verifica firma (ACL) y evalúa política ABAC en capa de servicio por rol, centro y relación.",
                 "fuente": "Bloque 4.1",
                 "x": 320,
                 "y": 93
@@ -471,13 +500,31 @@
                 "fuente": "RF-08",
                 "x": 1740,
                 "y": 378
+              },
+              {
+                "id": "sd_admin_red",
+                "nombre": "Admin de Red / TI",
+                "tipo_elemento": "Actor",
+                "descripcion": "Asigna y revoca roles (MEDICO_RURAL, ESPECIALISTA, AUDITOR, ADMIN) y atributos de centro/especialidad en Cognito.",
+                "fuente": "Gobernanza IAM · RF-01",
+                "x": 210,
+                "y": 758
+              },
+              {
+                "id": "sd_cognito",
+                "nombre": "Cognito OIDC + Perfiles",
+                "tipo_elemento": "Sistema Externo",
+                "descripcion": "Autentica identidad con OIDC + MFA y emite el JWT firmado con claims de rol, centro y especialidad.",
+                "fuente": "AuthN · RF-01",
+                "x": 520,
+                "y": 758
               }
             ],
             "aristas": [
               {
                 "fuente": "sd_act",
                 "destino": "sd_cmd1",
-                "descripcion": "intenta leer"
+                "descripcion": "envía JWT e intenta leer"
               },
               {
                 "fuente": "sd_cmd1",
@@ -487,7 +534,7 @@
               {
                 "fuente": "sd_cmd1",
                 "destino": "sd_id",
-                "descripcion": "evalúa ABAC"
+                "descripcion": "autentica y evalúa ABAC"
               },
               {
                 "fuente": "sd_ev1",
@@ -522,12 +569,22 @@
               {
                 "fuente": "sd_id",
                 "destino": "sd_abac",
-                "descripcion": "aplica"
+                "descripcion": "autoriza ABAC"
               },
               {
                 "fuente": "sd_id",
                 "destino": "sd_acl",
                 "descripcion": "traduce JWT"
+              },
+              {
+                "fuente": "sd_admin_red",
+                "destino": "sd_cognito",
+                "descripcion": "asigna roles y centro"
+              },
+              {
+                "fuente": "sd_cognito",
+                "destino": "sd_acl",
+                "descripcion": "autentica OIDC+MFA (JWT)"
               },
               {
                 "fuente": "sd_traza",
@@ -549,7 +606,7 @@
         "name": "Secuencia · ABAC, Denegación Auditada y Reporte",
         "kind": "mermaid",
         "notation": "c4",
-        "mermaidCode": "sequenceDiagram\n    autonumber\n    participant U as Usuario Administrativo (sin rol clínico)\n    participant O as OAuth2 Resource Server (ACL OIDC)\n    participant C as Amazon Cognito + DynamoDB Perfiles\n    participant S as Servicio Clínico (@PreAuthorize + AuthorizationManager)\n    participant I as Interceptor Auditoría (REQUIRES_NEW)\n    participant W as S3 Object Lock (Compliance WORM)\n    participant A as Auditor Clínico\n    participant R as Reporte Reproducible Versionado\n\n    Note over U,W: Región AWS única — TLS en tránsito + KMS en reposo sin réplicas externas\n    U->>O: GET /api/v1/historial/DOC-X (JWT válido, rol=ADMIN)\n    O->>C: Validar firma JWT y atributos (rol, centro, especialidad)\n    C-->>O: PrincipalClínico(rol=ADMIN, sin relación asistencial)\n    O->>S: Invoca caso de uso con contexto de seguridad\n    S->>S: Evalúa AuthorizationManager ABAC en capa de servicio (no controlador)\n    S->>I: Registrar intento denegado (usuario, fecha, DOC-X, motivo, permitido=false)\n    I->>W: PutObject ObjectLockMode=COMPLIANCE (append-only, sin rollback)\n    W-->>I: Evidencia inmutable persistida\n    S-->>U: 403 Forbidden (100 % denegaciones registradas)\n    Note over A,R: Demostración verificable de auditoría (Sesión 4)\n    A->>R: Ejecutar script reporte \"¿Quién vio DOC-X y con qué motivo?\"\n    R->>W: Consultar trazas inmutables de DOC-X\n    W-->>R: Accesos permitidos + intento denegado de ADMIN\n    R-->>A: Reporte reproducible versionado en repositorio\n",
+        "mermaidCode": "sequenceDiagram\n    autonumber\n    participant AD as Admin de Red / TI\n    participant U as Usuario Administrativo (sin rol clínico)\n    participant C as Amazon Cognito (OIDC+MFA) + DynamoDB Perfiles\n    participant O as OAuth2 Resource Server (ACL OIDC)\n    participant S as Servicio Clínico (@PreAuthorize + AuthorizationManager)\n    participant I as Interceptor Auditoría (REQUIRES_NEW)\n    participant W as S3 Object Lock (Compliance WORM)\n    participant A as Auditor Clínico\n    participant R as Reporte Reproducible Versionado\n\n    Note over AD,C: 1) Gobernanza IAM — Admin de Red / TI asigna roles y atributos\n    AD->>C: Aprovisiona usuario + asigna rol (ADMIN / MEDICO_RURAL / ESPECIALISTA) y centro\n    Note over U,C: 2) Autenticación (AuthN) — Identidad verificada antes de llamar al API\n    U->>C: Login OIDC + MFA (usuario, clave, 2FA)\n    C-->>U: Emite JWT firmado (claims: sub, rol=ADMIN, centro_id, especialidad)\n    Note over U,W: 3) Autorización ABAC en servicio (AuthZ) — Región AWS única + TLS + KMS\n    U->>O: GET /api/v1/historial/DOC-X (Authorization: Bearer JWT)\n    O->>C: Validar firma criptográfica JWT (JWKS) y atributos del perfil\n    C-->>O: PrincipalClínico(rol=ADMIN, sin relación asistencial)\n    O->>S: Invoca caso de uso con contexto de seguridad autenticado\n    S->>S: Evalúa AuthorizationManager ABAC en capa de servicio (no controlador)\n    S->>I: Registrar intento denegado (usuario, fecha, DOC-X, motivo, permitido=false)\n    I->>W: PutObject ObjectLockMode=COMPLIANCE (append-only, sin rollback)\n    W-->>I: Evidencia inmutable persistida\n    S-->>U: 403 Forbidden (100 % denegaciones registradas)\n    Note over A,R: 4) Demostración verificable de auditoría (Sesión 4)\n    A->>R: Ejecutar script reporte \"¿Quién vio DOC-X y con qué motivo?\"\n    R->>W: Consultar trazas inmutables de DOC-X\n    W-->>R: Accesos permitidos + intento denegado de ADMIN\n    R-->>A: Reporte reproducible versionado en repositorio\n",
         "createdAt": "2026-11-24T22:35:00.000Z"
       }
     ],

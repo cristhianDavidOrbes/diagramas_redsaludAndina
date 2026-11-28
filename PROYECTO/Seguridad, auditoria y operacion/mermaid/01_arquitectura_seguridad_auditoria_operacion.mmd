@@ -6,17 +6,20 @@ flowchart LR
     sec_obs["Micrometer + OpenTelemetry<br/><i>Componente</i>"]
     sec_rep["Reporte Auditoría Reproducible<br/><i>Componente</i>"]
   end
+  sec_admin_red("Admin de Red / TI<br/><i>Persona</i>")
   sec_usr("Usuario Clínico / Admin<br/><i>Persona</i>")
   sec_cog("Cognito + DynamoDB Perfiles<br/><i>Sistema Externo</i>")
   sec_kms[("AWS KMS + S3 Adjuntos<br/><i>Base de Datos</i>")]
   sec_worm[("S3 Object Lock (Compliance)<br/><i>Base de Datos</i>")]
   sec_aud_actor("Auditor Clínico<br/><i>Persona</i>")
   sec_cicd("CI/CD + IaC (Rollback <= 10m)<br/><i>Sistema Externo</i>")
-  sec_usr -->|"HTTPS + JWT [TLS]"| sec_oauth
-  sec_oauth -->|"PrincipalClínico"| sec_abac
-  sec_oauth -->|"Valida token y atributos"| sec_cog
+  sec_admin_red -->|"1. Asigna roles y centro"| sec_cog
+  sec_usr -->|"2. Autentica OIDC+MFA (JWT)"| sec_cog
+  sec_usr -->|"3. HTTPS + Bearer JWT [TLS]"| sec_oauth
+  sec_oauth -->|"4. Valida firma JWKS y perfil"| sec_cog
+  sec_oauth -->|"5. PrincipalClínico"| sec_abac
   sec_abac -->|"Cifrado KMS por contexto"| sec_kms
-  sec_abac -->|"Permite/deniega auditado"| sec_int
+  sec_abac -->|"6. Permite/deniega 403"| sec_int
   sec_int -->|"Append-only Compliance"| sec_worm
   sec_rep -->|"Lee evidencia inmutable"| sec_worm
   sec_aud_actor -->|"Consulta quién vio DOC-X"| sec_rep

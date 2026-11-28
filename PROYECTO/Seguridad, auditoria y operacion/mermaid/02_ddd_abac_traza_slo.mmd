@@ -17,16 +17,20 @@ flowchart LR
   sd_ev2(("TrazaWORMArchivada<br/><i>Evento</i>"))
   sd_vis(("Reporte Quien Vio Que<br/><i>Vista</i>"))
   sd_aud("Auditor Clínico<br/><i>Actor</i>")
-  sd_act -->|"intenta leer"| sd_cmd1
+  sd_admin_red("Admin de Red / TI<br/><i>Actor</i>")
+  sd_cognito("Cognito OIDC + Perfiles<br/><i>Sistema Externo</i>")
+  sd_act -->|"envía JWT e intenta leer"| sd_cmd1
   sd_cmd1 -->|"deniega 100%"| sd_ev1
-  sd_cmd1 -->|"evalúa ABAC"| sd_id
+  sd_cmd1 -->|"autentica y evalúa ABAC"| sd_id
   sd_ev1 -->|"dispara"| sd_pol
   sd_pol -->|"ordena"| sd_cmd2
   sd_cmd2 -->|"confirma"| sd_ev2
   sd_cmd2 -->|"registra inmutable"| sd_traza
   sd_ev2 -->|"alimenta"| sd_vis
   sd_vis -->|"entrega reporte"| sd_aud
-  sd_id -->|"aplica"| sd_abac
+  sd_id -->|"autoriza ABAC"| sd_abac
   sd_id -->|"traduce JWT"| sd_acl
+  sd_admin_red -->|"asigna roles y centro"| sd_cognito
+  sd_cognito -->|"autentica OIDC+MFA (JWT)"| sd_acl
   sd_traza -->|"persiste WORM"| sd_worm
   sd_traza -->|"garantiza región"| sd_reg
